@@ -12,6 +12,8 @@ class Place {
   final bool isVisited;
   final String imageUrl;
   final String type;     // 'restaurant', 'clothing', 'visit'
+  final double? latitude;
+  final double? longitude;
 
   // Landmark/Sightseeing details
   final String? entryFee;
@@ -33,6 +35,8 @@ class Place {
     required this.isVisited,
     required this.imageUrl,
     required this.type,
+    this.latitude,
+    this.longitude,
     this.entryFee,
     this.bestTime,
     required this.dateAdded,

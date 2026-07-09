@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -8,15 +9,12 @@ import '../../../../shared/components/gn_card.dart';
 import '../../../../shared/components/gn_chip.dart';
 import '../../../../shared/components/gn_empty_state.dart';
 import '../providers/navigation_provider.dart';
+import '../../../places/data/models/place_model.dart';
+import '../../../places/presentation/providers/place_provider.dart';
 
-/// HomeTabView implements the refined Phase 4.2 dashboard layout.
+/// HomeTabView implements the refined Phase 4.2 dashboard layout backed by Hive data.
 class HomeTabView extends ConsumerWidget {
-  final bool isEmpty;
-
-  const HomeTabView({
-    super.key,
-    this.isEmpty = false,
-  });
+  const HomeTabView({super.key});
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -33,344 +31,298 @@ class HomeTabView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (isEmpty) {
-      return GNEmptyState(
-        icon: Icons.map_outlined,
-        title: 'Your next favorite place starts here',
-        description: 'Add a restaurant, boutique, or travel location to begin your travel diary.',
-        actionLabel: 'Add your first place',
-        onActionPressed: () {},
-      );
-    }
+    final placesAsync = ref.watch(placesListProvider);
 
-    final greeting = _getGreeting();
+    return placesAsync.when(
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator(color: AppColors.primary))),
+      error: (err, stack) => Scaffold(body: Center(child: Text('Error: $err'))),
+      data: (places) {
+        if (places.isEmpty) {
+          return Scaffold(
+            backgroundColor: AppColors.background,
+            body: GNEmptyState(
+              icon: Icons.map_outlined,
+              title: 'Your next favorite place starts here',
+              description: 'Add a restaurant, boutique, or travel location to begin your travel diary.',
+              actionLabel: 'Add your first place',
+              onActionPressed: () {
+                context.push('/add-restaurant');
+              },
+            ),
+          );
+        }
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        bottom: false,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppSizes.gapH24, // Top-of-screen breathing room
+        final greeting = _getGreeting();
 
-              // 1. Collapsing App Bar Header Area (Greeting + Settings Icon)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        // Calculate statistics dynamically
+        final savedCount = places.length;
+        final visitedCount = places.where((p) => p.isVisited).length;
+        
+        final currentMonthStr = DateFormat('yyyy-MM').format(DateTime.now());
+        final thisMonthCount = places.where((p) => p.dateAdded.startsWith(currentMonthStr)).length;
+
+        // Categorize items and limit to 5
+        final restaurants = places.where((p) => p.type == 'restaurant').toList();
+        final clothing = places.where((p) => p.type == 'clothing').toList();
+        final visits = places.where((p) => p.type == 'visit').toList();
+        final wishlist = places.where((p) => p.isWishlist).toList();
+
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: SafeArea(
+            bottom: false,
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '$greeting,',
-                          style: AppTypography.display.copyWith(
-                            color: AppColors.textPrimary,
-                          ),
+                  AppSizes.gapH24, // Top-of-screen breathing room
+
+                  // 1. Collapsing App Bar Header Area (Greeting + Settings Icon)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '$greeting,',
+                              style: AppTypography.display.copyWith(
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              'explorer',
+                              style: AppTypography.display.copyWith(
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          'explorer',
-                          style: AppTypography.display.copyWith(
-                            color: AppColors.primary,
+                      ),
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: AppColors.surfaceFaint,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(
+                            Icons.settings_rounded,
+                            color: AppColors.textPrimary,
+                            size: AppSizes.s24,
                           ),
+                          onPressed: () => context.push('/settings'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  AppSizes.gapH24,
+
+                  // 2. Quick Actions row of 3 pill buttons
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      children: [
+                        GNChip(
+                          label: 'Add Restaurant',
+                          leadingIcon: Icons.restaurant_rounded,
+                          variant: GNChipVariant.category,
+                          onTap: () => context.push('/add-restaurant'),
+                        ),
+                        AppSizes.gapW8,
+                        GNChip(
+                          label: 'Add Clothing',
+                          leadingIcon: Icons.checkroom_rounded,
+                          variant: GNChipVariant.category,
+                          onTap: () => context.push('/add-clothing'),
+                        ),
+                        AppSizes.gapW8,
+                        GNChip(
+                          label: 'Add Visit',
+                          leadingIcon: Icons.travel_explore_rounded,
+                          variant: GNChipVariant.category,
+                          onTap: () => context.push('/add-visit'),
                         ),
                       ],
                     ),
                   ),
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: AppColors.surfaceFaint,
-                    child: IconButton(
-                      padding: EdgeInsets.zero,
-                      icon: const Icon(
-                        Icons.settings_rounded,
-                        color: AppColors.textPrimary,
-                        size: AppSizes.s24,
+                  AppSizes.gapH32,
+
+                  // 4. Statistics Row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GNCard(
+                          variant: GNCardVariant.stat,
+                          value: savedCount.toString(),
+                          title: 'Saved',
+                          icon: Icons.bookmark_added_rounded,
+                        ),
                       ),
-                      onPressed: () => context.push('/settings'),
-                    ),
+                      AppSizes.gapW12,
+                      Expanded(
+                        child: GNCard(
+                          variant: GNCardVariant.stat,
+                          value: visitedCount.toString(),
+                          title: 'Visited',
+                          icon: Icons.verified_rounded,
+                        ),
+                      ),
+                      AppSizes.gapW12,
+                      Expanded(
+                        child: GNCard(
+                          variant: GNCardVariant.stat,
+                          value: thisMonthCount.toString(),
+                          title: 'This Month',
+                          icon: Icons.calendar_month_rounded,
+                        ),
+                      ),
+                    ],
                   ),
+                  AppSizes.gapH32,
+
+                  // 6. Previews
+                  // A. Restaurants Preview
+                  _buildSectionHeader(
+                    context,
+                    title: 'Recently Added Restaurants',
+                    overline: 'RESTAURANTS',
+                    indicatorIcon: Icons.restaurant_rounded,
+                    indicatorColor: AppColors.primary,
+                    onSeeAllPressed: () {
+                      ref.read(dashboardTabProvider.notifier).setTab(DashboardTab.restaurants);
+                    },
+                  ),
+                  if (restaurants.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text('No restaurants saved yet.', style: TextStyle(color: AppColors.textSecondary)),
+                    )
+                  else
+                    SizedBox(
+                      height: 220,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: restaurants.length > 5 ? 5 : restaurants.length,
+                        itemBuilder: (context, idx) {
+                          final rest = restaurants[idx];
+                          return GNCard(
+                            variant: GNCardVariant.compact,
+                            title: rest.name,
+                            subtitle: '${rest.category} • ${rest.budget}',
+                            icon: Icons.restaurant_rounded,
+                            imageUrl: rest.imageUrl,
+                            imageType: rest.imageType,
+                            onTap: () => context.push('/restaurant-detail/${rest.id}'),
+                          );
+                        },
+                      ),
+                    ),
+                  AppSizes.gapH24,
+
+                  // B. Clothing Stores Preview
+                  _buildSectionHeader(
+                    context,
+                    title: 'Recently Added Boutiques',
+                    overline: 'CLOTHING STORES',
+                    indicatorIcon: Icons.checkroom_rounded,
+                    indicatorColor: AppColors.secondary,
+                    onSeeAllPressed: () {
+                      ref.read(dashboardTabProvider.notifier).setTab(DashboardTab.clothing);
+                    },
+                  ),
+                  if (clothing.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text('No boutiques saved yet.', style: TextStyle(color: AppColors.textSecondary)),
+                    )
+                  else
+                    SizedBox(
+                      height: 220,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: clothing.length > 5 ? 5 : clothing.length,
+                        itemBuilder: (context, idx) {
+                          final store = clothing[idx];
+                          return GNCard(
+                            variant: GNCardVariant.compact,
+                            title: store.name,
+                            subtitle: '${store.category} • ${store.budget}',
+                            icon: Icons.checkroom_rounded,
+                            imageUrl: store.imageUrl,
+                            imageType: store.imageType,
+                            onTap: () => context.push('/clothing-detail/${store.id}'),
+                          );
+                        },
+                      ),
+                    ),
+                  AppSizes.gapH24,
+
+                  // C. Places to Visit Preview
+                  _buildSectionHeader(
+                    context,
+                    title: 'Recently Added Landmarks',
+                    overline: 'PLACES TO VISIT',
+                    indicatorIcon: Icons.travel_explore_rounded,
+                    indicatorColor: AppColors.warning,
+                    onSeeAllPressed: () {
+                      ref.read(dashboardTabProvider.notifier).setTab(DashboardTab.visits);
+                    },
+                  ),
+                  if (visits.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text('No travel spots saved yet.', style: TextStyle(color: AppColors.textSecondary)),
+                    )
+                  else
+                    SizedBox(
+                      height: 220,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: visits.length > 5 ? 5 : visits.length,
+                        itemBuilder: (context, idx) {
+                          final place = visits[idx];
+                          return GNCard(
+                            variant: GNCardVariant.compact,
+                            title: place.name,
+                            subtitle: '${place.category} • ${place.entryFee ?? 'Free'}',
+                            icon: Icons.travel_explore_rounded,
+                            imageUrl: place.imageUrl,
+                            imageType: place.imageType,
+                            onTap: () => context.push('/place-detail/${place.id}'),
+                          );
+                        },
+                      ),
+                    ),
+                  AppSizes.gapH24,
+
+                  // 8. Wishlist preview
+                  _buildSectionHeader(
+                    context,
+                    title: 'Wishlist preview',
+                    overline: 'WISHLIST PREVIEW',
+                    onSeeAllPressed: () {
+                      ref.read(dashboardTabProvider.notifier).setTab(DashboardTab.wishlist);
+                    },
+                  ),
+                  _buildWishlistPreview(context, ref, wishlist),
+                  AppSizes.gapH32,
+
+                  // Extra padding for bottom bar
+                  AppSizes.gapH64,
+                  AppSizes.gapH48,
                 ],
               ),
-              AppSizes.gapH24,
-
-              // 2. Quick Actions row of 3 pill buttons
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                child: Row(
-                  children: [
-                    GNChip(
-                      label: 'Add Restaurant',
-                      leadingIcon: Icons.restaurant_rounded,
-                      variant: GNChipVariant.category,
-                      onTap: () => context.push('/add-restaurant'),
-                    ),
-                    AppSizes.gapW8,
-                    GNChip(
-                      label: 'Add Clothing',
-                      leadingIcon: Icons.checkroom_rounded,
-                      variant: GNChipVariant.category,
-                      onTap: () => context.push('/add-clothing'),
-                    ),
-                    AppSizes.gapW8,
-                    GNChip(
-                      label: 'Add Visit',
-                      leadingIcon: Icons.travel_explore_rounded,
-                      variant: GNChipVariant.category,
-                      onTap: () => context.push('/add-visit'),
-                    ),
-                  ],
-                ),
-              ),
-              AppSizes.gapH32,
-
-              // 4. Statistics Row
-              Row(
-                children: const [
-                  Expanded(
-                    child: GNCard(
-                      variant: GNCardVariant.stat,
-                      value: '12',
-                      title: 'Saved',
-                      icon: Icons.bookmark_added_rounded,
-                    ),
-                  ),
-                  AppSizes.gapW12,
-                  Expanded(
-                    child: GNCard(
-                      variant: GNCardVariant.stat,
-                      value: '5',
-                      title: 'Visited',
-                      icon: Icons.verified_rounded,
-                    ),
-                  ),
-                  AppSizes.gapW12,
-                  Expanded(
-                    child: GNCard(
-                      variant: GNCardVariant.stat,
-                      value: '3',
-                      title: 'This Month',
-                      icon: Icons.calendar_month_rounded,
-                    ),
-                  ),
-                ],
-              ),
-              AppSizes.gapH32,
-
-              // 6. Previews
-              // A. Restaurants Preview
-              _buildSectionHeader(
-                context,
-                title: 'Recently Added Restaurants',
-                overline: 'RESTAURANTS',
-                indicatorIcon: Icons.restaurant_rounded,
-                indicatorColor: AppColors.primary,
-                onSeeAllPressed: () {
-                  ref.read(dashboardTabProvider.notifier).setTab(DashboardTab.restaurants);
-                },
-              ),
-              SizedBox(
-                height: 220,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  children: [
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'The Bombay Canteen',
-                      subtitle: 'Modern Indian • ₹₹₹',
-                      icon: Icons.restaurant_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/restaurant-detail/rest-1'),
-                    ),
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'Tulum Café',
-                      subtitle: 'Mexican Bistro • ₹₹',
-                      isWishlist: true,
-                      icon: Icons.restaurant_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/restaurant-detail/rest-2'),
-                    ),
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'The Green Olive',
-                      subtitle: 'Mediterranean • ₹',
-                      icon: Icons.restaurant_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/restaurant-detail/rest-3'),
-                    ),
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'Bella Italia',
-                      subtitle: 'Italian Bistro • ₹₹',
-                      icon: Icons.restaurant_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/restaurant-detail/rest-4'),
-                    ),
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'Baker\'s Pride',
-                      subtitle: 'Bakery • ₹',
-                      icon: Icons.restaurant_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/restaurant-detail/rest-5'),
-                    ),
-                  ],
-                ),
-              ),
-              AppSizes.gapH24,
-
-              // B. Clothing Stores Preview
-              _buildSectionHeader(
-                context,
-                title: 'Recently Added Boutiques',
-                overline: 'CLOTHING STORES',
-                indicatorIcon: Icons.checkroom_rounded,
-                indicatorColor: AppColors.secondary,
-                onSeeAllPressed: () {
-                  ref.read(dashboardTabProvider.notifier).setTab(DashboardTab.clothing);
-                },
-              ),
-              SizedBox(
-                height: 220,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  children: [
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'Urban Threads',
-                      subtitle: 'Streetwear Hub • ₹₹',
-                      isWishlist: true,
-                      icon: Icons.checkroom_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/clothing-detail/cloth-1'),
-                    ),
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'Tokyo Streetwear',
-                      subtitle: 'Boutique Store • ₹₹₹',
-                      icon: Icons.checkroom_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/clothing-detail/cloth-2'),
-                    ),
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'Vogue Boutique',
-                      subtitle: 'Designer Atelier • ₹₹₹₹',
-                      icon: Icons.checkroom_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/clothing-detail/cloth-3'),
-                    ),
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'Retro Vintage',
-                      subtitle: 'Thrift Store • ₹',
-                      icon: Icons.checkroom_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/clothing-detail/cloth-4'),
-                    ),
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'Concept Atelier',
-                      subtitle: 'Designer Collective • ₹₹₹',
-                      icon: Icons.checkroom_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1567401893930-7db7138b315d?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/clothing-detail/cloth-5'),
-                    ),
-                  ],
-                ),
-              ),
-              AppSizes.gapH24,
-
-              // C. Places to Visit Preview
-              _buildSectionHeader(
-                context,
-                title: 'Recently Added Landmarks',
-                overline: 'PLACES TO VISIT',
-                indicatorIcon: Icons.travel_explore_rounded,
-                indicatorColor: AppColors.warning,
-                onSeeAllPressed: () {
-                  ref.read(dashboardTabProvider.notifier).setTab(DashboardTab.visits);
-                },
-              ),
-              SizedBox(
-                height: 220,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  children: [
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'Grand Canyon',
-                      subtitle: 'Nature Reserve • Free',
-                      isWishlist: true,
-                      icon: Icons.travel_explore_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/place-detail/visit-1'),
-                    ),
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'Taj Mahal',
-                      subtitle: 'Historical Site • ₹₹',
-                      icon: Icons.travel_explore_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1508849789987-4e5333c12b78?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/place-detail/visit-2'),
-                    ),
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'Central Park NYC',
-                      subtitle: 'City Landmark • Free',
-                      icon: Icons.travel_explore_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/place-detail/visit-3'),
-                    ),
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'Kyoto Temple',
-                      subtitle: 'Heritage Gardens • ₹',
-                      icon: Icons.travel_explore_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/place-detail/visit-4'),
-                    ),
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'Tomorrowland Resort',
-                      subtitle: 'Amusement Hub • ₹₹₹₹',
-                      icon: Icons.travel_explore_rounded,
-                      imageUrl: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=500&auto=format&fit=crop&q=60',
-                      onTap: () => context.push('/place-detail/visit-5'),
-                    ),
-                  ],
-                ),
-              ),
-              AppSizes.gapH24,
-
-              // 8. Wishlist preview
-              _buildSectionHeader(
-                context,
-                title: 'Wishlist preview',
-                overline: 'WISHLIST PREVIEW',
-                onSeeAllPressed: () {
-                  ref.read(dashboardTabProvider.notifier).setTab(DashboardTab.wishlist);
-                },
-              ),
-              _buildWishlistPreview(context, ref),
-              AppSizes.gapH32,
-
-              // Extra padding for bottom bar
-              AppSizes.gapH64,
-              AppSizes.gapH48,
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -437,13 +389,15 @@ class HomeTabView extends ConsumerWidget {
   }
 
   /// Builds the 2x2 Grid of Wishlist preview tiles (with +N overlay on the 4th item)
-  Widget _buildWishlistPreview(BuildContext context, WidgetRef ref) {
-    final previewItems = [
-      {'id': 'rest-2', 'name': 'Tulum Cafe', 'icon': Icons.restaurant_rounded, 'type': 'rest'},
-      {'id': 'cloth-1', 'name': 'Urban Threads', 'icon': Icons.checkroom_rounded, 'type': 'cloth'},
-      {'id': 'visit-3', 'name': 'Central Park NYC', 'icon': Icons.travel_explore_rounded, 'type': 'visit'},
-      {'id': 'visit-1', 'name': 'Grand Canyon', 'icon': Icons.eco_rounded, 'type': 'visit'},
-    ];
+  Widget _buildWishlistPreview(BuildContext context, WidgetRef ref, List<PlaceModel> wishlist) {
+    if (wishlist.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16.0),
+        child: Text('No wishlist items saved yet.', style: TextStyle(color: AppColors.textSecondary)),
+      );
+    }
+
+    final displayCount = wishlist.length > 4 ? 4 : wishlist.length;
 
     return GridView.builder(
       shrinkWrap: true,
@@ -454,10 +408,10 @@ class HomeTabView extends ConsumerWidget {
         crossAxisSpacing: AppSizes.p12,
         childAspectRatio: 1.2,
       ),
-      itemCount: 4,
+      itemCount: displayCount,
       itemBuilder: (context, index) {
-        final item = previewItems[index];
-        final isLast = index == 3;
+        final item = wishlist[index];
+        final isLast = index == 3 && wishlist.length > 4;
 
         return ClipRRect(
           borderRadius: BorderRadius.circular(AppSizes.r16),
@@ -466,14 +420,12 @@ class HomeTabView extends ConsumerWidget {
             children: [
               GestureDetector(
                 onTap: () {
-                  final id = item['id']!;
-                  final type = item['type']!;
-                  if (type == 'rest') {
-                    context.push('/restaurant-detail/$id');
-                  } else if (type == 'cloth') {
-                    context.push('/clothing-detail/$id');
+                  if (item.type == 'restaurant') {
+                    context.push('/restaurant-detail/${item.id}');
+                  } else if (item.type == 'clothing') {
+                    context.push('/clothing-detail/${item.id}');
                   } else {
-                    context.push('/place-detail/$id');
+                    context.push('/place-detail/${item.id}');
                   }
                 },
                 child: Container(
@@ -483,9 +435,16 @@ class HomeTabView extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(item['icon'] as IconData, color: AppColors.primary.withValues(alpha: 0.4)),
+                      Icon(
+                        item.type == 'restaurant'
+                            ? Icons.restaurant_rounded
+                            : item.type == 'clothing'
+                                ? Icons.checkroom_rounded
+                                : Icons.travel_explore_rounded,
+                        color: AppColors.primary.withValues(alpha: 0.4),
+                      ),
                       Text(
-                        item['name'] as String,
+                        item.name,
                         style: AppTypography.caption.copyWith(fontWeight: FontWeight.bold),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -503,7 +462,7 @@ class HomeTabView extends ConsumerWidget {
                     color: Colors.black.withValues(alpha: 0.55),
                     alignment: Alignment.center,
                     child: Text(
-                      '+12 more',
+                      '+${wishlist.length - 3} more',
                       style: AppTypography.subtitle.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

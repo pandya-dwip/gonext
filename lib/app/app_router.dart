@@ -35,17 +35,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/add-restaurant',
         name: 'add-restaurant',
-        builder: (context, state) => const AddRestaurantPage(),
+        builder: (context, state) {
+          final id = state.uri.queryParameters['id'];
+          return AddRestaurantPage(editPlaceId: id);
+        },
       ),
       GoRoute(
         path: '/add-clothing',
         name: 'add-clothing',
-        builder: (context, state) => const AddClothingPage(),
+        builder: (context, state) {
+          final id = state.uri.queryParameters['id'];
+          return AddClothingPage(editPlaceId: id);
+        },
       ),
       GoRoute(
         path: '/add-visit',
         name: 'add-visit',
-        builder: (context, state) => const AddVisitPage(),
+        builder: (context, state) {
+          final id = state.uri.queryParameters['id'];
+          return AddVisitPage(editPlaceId: id);
+        },
       ),
       GoRoute(
         path: '/restaurant-detail/:id',

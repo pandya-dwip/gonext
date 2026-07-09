@@ -1,69 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'dart:io';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/extensions/context_extensions.dart';
 import '../../../../shared/components/gn_card.dart';
 import '../../../../shared/components/gn_chip.dart';
-import 'package:go_router/go_router.dart';
+import '../../../../shared/components/gn_button.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../providers/place_provider.dart';
+import '../../data/models/place_model.dart';
+import 'restaurants_page.dart'; // Import GNEmptyState
 
 /// WishlistPage displays a motivational count title, toggleable list/map previews,
 /// and list swipe-to-visit animations with premium photo coverage.
-class WishlistPage extends StatefulWidget {
+class WishlistPage extends ConsumerStatefulWidget {
   const WishlistPage({super.key});
 
   @override
-  State<WishlistPage> createState() => _WishlistPageState();
+  ConsumerState<WishlistPage> createState() => _WishlistPageState();
 }
 
-class _WishlistPageState extends State<WishlistPage> {
+class _WishlistPageState extends ConsumerState<WishlistPage> {
   bool _isMapView = false;
+  final TextEditingController _searchController = TextEditingController();
 
-  final List<Map<String, dynamic>> _mockWishlist = [
-    {
-      'id': 'rest-2',
-      'type': 'rest',
-      'name': 'Tulum Café',
-      'category': 'Restaurant',
-      'rating': 4.8,
-      'savedTime': 'saved 3 weeks ago',
-      'icon': Icons.restaurant_rounded,
-      'imageUrl': 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500&auto=format&fit=crop&q=60',
-    },
-    {
-      'id': 'cloth-1',
-      'type': 'cloth',
-      'name': 'Urban Threads',
-      'category': 'Clothing Store',
-      'rating': 4.2,
-      'savedTime': 'saved 5 days ago',
-      'icon': Icons.checkroom_rounded,
-      'imageUrl': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&auto=format&fit=crop&q=60',
-    },
-    {
-      'id': 'visit-1',
-      'type': 'visit',
-      'name': 'Grand Canyon',
-      'category': 'Place to Visit',
-      'rating': 4.9,
-      'savedTime': 'saved 2 weeks ago',
-      'icon': Icons.travel_explore_rounded,
-      'imageUrl': 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500&auto=format&fit=crop&q=60',
-    },
-    {
-      'id': 'visit-3',
-      'type': 'visit',
-      'name': 'Central Park NYC',
-      'category': 'Place to Visit',
-      'rating': 4.7,
-      'savedTime': 'saved 1 month ago',
-      'icon': Icons.eco_rounded,
-      'imageUrl': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&q=60',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _searchController.text = ref.read(placeSearchQueryProvider);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _navigateToDetail(BuildContext context, PlaceModel place) {
+    if (place.type == 'restaurant') {
+      context.push('/restaurant-detail/${place.id}');
+    } else if (place.type == 'clothing') {
+      context.push('/clothing-detail/${place.id}');
+    } else {
+      context.push('/place-detail/${place.id}');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final wishlist = ref.watch(filteredWishlistProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -82,7 +72,7 @@ class _WishlistPageState extends State<WishlistPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${_mockWishlist.length} places',
+                          '${wishlist.length} places',
                           style: AppTypography.titleLarge.copyWith(fontSize: 28),
                         ),
                         const SizedBox(height: 2),
@@ -140,12 +130,49 @@ class _WishlistPageState extends State<WishlistPage> {
                 ],
               ),
             ),
+
+            // Pinned Search Bar inside wishlist
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16, vertical: 4.0),
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceFaint,
+                  borderRadius: BorderRadius.circular(AppSizes.rPill),
+                  border: Border.all(color: AppColors.border),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
+                    AppSizes.gapW8,
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (val) {
+                          ref.read(placeSearchQueryProvider.notifier).state = val;
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Search wishlist items...',
+                          hintStyle: AppTypography.body.copyWith(color: AppColors.textMuted),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                          filled: false,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             AppSizes.gapH12,
 
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
-                child: _isMapView ? _buildMapView(context) : _buildListView(context),
+                child: _isMapView ? _buildMapView(context, wishlist) : _buildListView(context, wishlist),
               ),
             ),
           ],
@@ -154,37 +181,28 @@ class _WishlistPageState extends State<WishlistPage> {
     );
   }
 
-  /// Builds a high-fidelity mock list with swipe-to-visited interactions
-  Widget _buildListView(BuildContext context) {
-    if (_mockWishlist.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSizes.p32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.favorite_border_rounded, size: 64, color: AppColors.primary),
-              AppSizes.gapH16,
-              Text('Your wishlist is empty', style: AppTypography.title),
-              AppSizes.gapH8,
-              Text('Swipe, save, and keep places in mind.', style: AppTypography.caption),
-            ],
-          ),
-        ),
+  Widget _buildListView(BuildContext context, List<PlaceModel> wishlist) {
+    if (wishlist.isEmpty) {
+      return const GNEmptyState(
+        title: 'Your Wishlist is Empty',
+        subtitle: 'Add places and restaurants to keep them in mind for later.',
+        buttonLabel: 'Explore Dashboard',
+        icon: Icons.favorite_border_rounded,
+        onButtonPressed: _noOp, // Handled inside GoRouter tab switch
       );
     }
 
     return ListView.separated(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(AppSizes.p16, 0, AppSizes.p16, 120.0),
-      itemCount: _mockWishlist.length,
+      itemCount: wishlist.length,
       separatorBuilder: (context, index) => AppSizes.gapH24,
       itemBuilder: (context, index) {
-        final item = _mockWishlist[index];
+        final item = wishlist[index];
 
         return Dismissible(
-          key: Key(item['name'] as String),
-          direction: DismissDirection.startToEnd, // Swipe-right only
+          key: Key(item.id),
+          direction: DismissDirection.startToEnd, // Swipe-right to mark as Visited!
           background: Container(
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.only(left: AppSizes.p24),
@@ -192,8 +210,8 @@ class _WishlistPageState extends State<WishlistPage> {
               color: AppColors.success,
               borderRadius: BorderRadius.circular(AppSizes.r24),
             ),
-            child: Row(
-              children: const [
+            child: const Row(
+              children: [
                 Icon(Icons.check_circle_rounded, color: Colors.white, size: AppSizes.s28),
                 AppSizes.gapW8,
                 Text(
@@ -203,48 +221,86 @@ class _WishlistPageState extends State<WishlistPage> {
               ],
             ),
           ),
-          onDismissed: (direction) {
-            setState(() {
-              _mockWishlist.removeAt(index);
-            });
-            context.showSnackBar('Nice! Moved to Visits.', isError: false);
+          onDismissed: (direction) async {
+            final updated = PlaceModel(
+              id: item.id,
+              name: item.name,
+              description: item.description,
+              category: item.category,
+              budget: item.budget,
+              location: item.location,
+              rating: item.rating,
+              isVisited: true,
+              isWishlist: false,
+              imageUrl: item.imageUrl,
+              type: item.type,
+              entryFee: item.entryFee,
+              bestTime: item.bestTime,
+              latitude: item.latitude,
+              longitude: item.longitude,
+              dateAdded: item.dateAdded,
+              lastUpdated: DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now()),
+              imageType: item.imageType,
+            );
+            await ref.read(placesListProvider.notifier).updatePlace(updated);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Moved ${item.name} to Visits.'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
           },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               GNCard(
                 variant: GNCardVariant.standard,
-                title: item['name'] as String,
-                subtitle: '${item['category']} • ${item['savedTime']}',
-                rating: item['rating'] as double,
+                title: item.name,
+                subtitle: '${_getTypeLabel(item.type)} • ${item.category}',
+                rating: item.rating,
                 isWishlist: true,
-                icon: item['icon'] as IconData,
-                imageUrl: item['imageUrl'] as String?,
+                icon: _getTypeIcon(item.type),
+                imageUrl: item.imageUrl,
+                imageType: item.imageType,
                 imageAspectRatio: 16 / 10,
-                onTap: () {
-                  final id = item['id'] as String;
-                  final type = item['type'] as String;
-                  if (type == 'rest') {
-                    context.push('/restaurant-detail/$id');
-                  } else if (type == 'cloth') {
-                    context.push('/clothing-detail/$id');
-                  } else {
-                    context.push('/place-detail/$id');
-                  }
+                onTap: () => _navigateToDetail(context, item),
+                onWishlistTap: () async {
+                  final updated = PlaceModel(
+                    id: item.id,
+                    name: item.name,
+                    description: item.description,
+                    category: item.category,
+                    budget: item.budget,
+                    location: item.location,
+                    rating: item.rating,
+                    isVisited: item.isVisited,
+                    isWishlist: false, // remove from wishlist
+                    imageUrl: item.imageUrl,
+                    type: item.type,
+                    entryFee: item.entryFee,
+                    bestTime: item.bestTime,
+                    latitude: item.latitude,
+                    longitude: item.longitude,
+                    dateAdded: item.dateAdded,
+                    lastUpdated: item.lastUpdated,
+                    imageType: item.imageType,
+                  );
+                  await ref.read(placesListProvider.notifier).updatePlace(updated);
                 },
               ),
               AppSizes.gapH8,
-              // Footer metadata tag (saved time)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GNChip(
-                    label: item['category'] as String,
+                    label: _getTypeLabel(item.type),
                     variant: GNChipVariant.status,
                     statusTone: GNStatusTone.info,
                   ),
                   Text(
-                    item['savedTime'] as String,
+                    'Added on ${item.dateAdded}',
                     style: AppTypography.caption.copyWith(
                       fontStyle: FontStyle.italic,
                       fontSize: 12,
@@ -259,8 +315,43 @@ class _WishlistPageState extends State<WishlistPage> {
     );
   }
 
-  /// Builds a high-fidelity visual map preview
-  Widget _buildMapView(BuildContext context) {
+  Widget _buildMapView(BuildContext context, List<PlaceModel> wishlist) {
+    final hasMapKey = AppConstants.isMapsApiKeyValid;
+    final mapItems = wishlist.where((p) => p.latitude != null && p.longitude != null).toList();
+
+    if (hasMapKey && mapItems.isNotEmpty) {
+      final markers = mapItems.map((p) {
+        return Marker(
+          markerId: MarkerId(p.id),
+          position: LatLng(p.latitude!, p.longitude!),
+          infoWindow: InfoWindow(
+            title: p.name,
+            snippet: _getTypeLabel(p.type),
+            onTap: () => _navigateToDetail(context, p),
+          ),
+        );
+      }).toSet();
+
+      final initialPos = LatLng(mapItems.first.latitude!, mapItems.first.longitude!);
+
+      return Container(
+        margin: const EdgeInsets.fromLTRB(AppSizes.p16, 0, AppSizes.p16, 120.0),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceFaint,
+          borderRadius: BorderRadius.circular(AppSizes.r24),
+          border: Border.all(color: AppColors.border),
+          boxShadow: AppSizes.shadowLevel1,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: GoogleMap(
+          initialCameraPosition: CameraPosition(target: initialPos, zoom: 11),
+          markers: markers,
+          myLocationButtonEnabled: false,
+          zoomControlsEnabled: false,
+        ),
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.fromLTRB(AppSizes.p16, 0, AppSizes.p16, 120.0),
       decoration: BoxDecoration(
@@ -273,27 +364,10 @@ class _WishlistPageState extends State<WishlistPage> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Mock Map Grid lines
           CustomPaint(
             painter: MapMockPainter(),
           ),
-          // Markers
-          Positioned(
-            top: 150,
-            left: 120,
-            child: _buildMockMarker(context, Icons.restaurant_rounded, 'Tulum Café'),
-          ),
-          Positioned(
-            top: 250,
-            right: 80,
-            child: _buildMockMarker(context, Icons.checkroom_rounded, 'Urban Threads'),
-          ),
-          Positioned(
-            bottom: 200,
-            left: 90,
-            child: _buildMockMarker(context, Icons.travel_explore_rounded, 'Grand Canyon'),
-          ),
-          // Map instruction header overlay
+          ..._buildMockVisualMarkers(mapItems.isNotEmpty ? mapItems : wishlist),
           Positioned(
             top: AppSizes.p16,
             left: AppSizes.p16,
@@ -301,7 +375,7 @@ class _WishlistPageState extends State<WishlistPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16, vertical: AppSizes.p12),
               decoration: BoxDecoration(
-                color: AppColors.background.withValues(alpha: 0.9),
+                color: Colors.white.withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(AppSizes.r16),
                 boxShadow: AppSizes.shadowLevel2,
               ),
@@ -311,7 +385,9 @@ class _WishlistPageState extends State<WishlistPage> {
                   AppSizes.gapW8,
                   Expanded(
                     child: Text(
-                      'Wishlist places plotted near you.',
+                      mapItems.isEmpty
+                          ? 'No coordinates set for wishlist items.'
+                          : 'Maps API key is missing. Visual plot fallback active.',
                       style: AppTypography.caption.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -324,70 +400,105 @@ class _WishlistPageState extends State<WishlistPage> {
     );
   }
 
-  Widget _buildMockMarker(BuildContext context, IconData icon, String name) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(AppSizes.p8),
-          decoration: const BoxDecoration(
-            color: AppColors.primary,
-            shape: BoxShape.circle,
-            boxShadow: AppSizes.shadowLevel2,
+  List<Widget> _buildMockVisualMarkers(List<PlaceModel> items) {
+    if (items.isEmpty) return [];
+    final positions = [
+      const Point(150.0, 120.0),
+      const Point(250.0, 200.0),
+      const Point(100.0, 180.0),
+      const Point(180.0, 80.0),
+    ];
+    final list = <Widget>[];
+    for (int i = 0; i < items.length && i < positions.length; i++) {
+      final item = items[i];
+      final pos = positions[i];
+      list.add(
+        Positioned(
+          top: pos.x,
+          left: pos.y,
+          child: GestureDetector(
+            onTap: () => _navigateToDetail(context, item),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: AppSizes.shadowLevel1,
+                  ),
+                  child: Icon(_getTypeIcon(item.type), color: AppColors.primary, size: 18),
+                ),
+                const SizedBox(height: 2),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.75),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    item.name,
+                    style: const TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Icon(icon, color: Colors.white, size: 16),
         ),
-        const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            name,
-            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
-    );
+      );
+    }
+    return list;
   }
+
+  String _getTypeLabel(String type) {
+    switch (type) {
+      case 'restaurant':
+        return 'Restaurant';
+      case 'clothing':
+        return 'Clothing Store';
+      default:
+        return 'Place to Visit';
+    }
+  }
+
+  IconData _getTypeIcon(String type) {
+    switch (type) {
+      case 'restaurant':
+        return Icons.restaurant_rounded;
+      case 'clothing':
+        return Icons.checkroom_rounded;
+      default:
+        return Icons.travel_explore_rounded;
+    }
+  }
+
+  static void _noOp() {}
 }
 
-/// Custom painter to draw stylized map grid lines
+class Point {
+  final double x;
+  final double y;
+  const Point(this.x, this.y);
+}
+
 class MapMockPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.border.withValues(alpha: 0.7)
+      ..color = AppColors.border.withValues(alpha: 0.3)
       ..strokeWidth = 1.0;
 
-    for (double i = 0; i < size.height; i += 40.0) {
-      canvas.drawLine(Offset(0, i), Offset(size.width, i), paint);
+    const step = 20.0;
+    for (double x = 0; x < size.width; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
-
-    for (double i = 0; i < size.width; i += 40.0) {
-      canvas.drawLine(Offset(i, 0), Offset(i, size.height), paint);
+    for (double y = 0; y < size.height; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
-
-    final pathPaint = Paint()
-      ..color = AppColors.secondary.withValues(alpha: 0.08)
-      ..strokeWidth = 32.0
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path()
-      ..moveTo(0, size.height * 0.4)
-      ..quadraticBezierTo(
-        size.width * 0.5,
-        size.height * 0.2,
-        size.width,
-        size.height * 0.7,
-      );
-
-    canvas.drawPath(path, pathPaint);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+

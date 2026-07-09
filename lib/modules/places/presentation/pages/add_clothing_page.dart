@@ -11,21 +11,34 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/components/gn_button.dart';
 import '../../../../shared/components/gn_searchable_selector.dart';
 import '../../domain/entities/location_result.dart';
+import '../providers/place_provider.dart';
 import 'wishlist_page.dart'; // import MapMockPainter for maps preview
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
+import '../../data/models/place_model.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 /// AddClothingPage provides the premium streetwear and fashion store form (Phase 5.3).
-class AddClothingPage extends StatefulWidget {
-  const AddClothingPage({super.key});
+class AddClothingPage extends ConsumerStatefulWidget {
+  final String? editPlaceId;
+
+  const AddClothingPage({
+    super.key,
+    this.editPlaceId,
+  });
 
   @override
-  State<AddClothingPage> createState() => _AddClothingPageState();
+  ConsumerState<AddClothingPage> createState() => _AddClothingPageState();
 }
 
-class _AddClothingPageState extends State<AddClothingPage> {
+class _AddClothingPageState extends ConsumerState<AddClothingPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
   final _locController = TextEditingController();
+  final _latController = TextEditingController();
+  final _lngController = TextEditingController();
 
   String _selectedStoreType = 'Boutique Store';
   String _selectedBudget = 'Mid Range';
@@ -37,6 +50,9 @@ class _AddClothingPageState extends State<AddClothingPage> {
   double? _lng;
   bool _isGeocoding = false;
   geo.Geocoding get _geocoding => geo.Geocoding();
+
+  String? _imagePath = 'assets/images/clothing/default_1.jpg';
+  String _imageType = 'asset'; // 'asset' or 'file'
 
   // Read-only Dates
   late final String _dateAdded;
@@ -55,6 +71,217 @@ class _AddClothingPageState extends State<AddClothingPage> {
     final fmt = DateFormat('yyyy-MM-dd');
     _dateAdded = fmt.format(now);
     _lastUpdated = fmt.format(now);
+
+    if (widget.editPlaceId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _populateFields();
+      });
+    }
+  }
+
+  void _populateFields() {
+    final places = ref.read(placesListProvider).value ?? [];
+    final editPlace = places.firstWhere((p) => p.id == widget.editPlaceId);
+    setState(() {
+      _nameController.text = editPlace.name;
+      _descController.text = editPlace.description;
+      _locController.text = editPlace.location;
+      _selectedStoreType = editPlace.category;
+      _selectedBudget = editPlace.budget;
+      _rating = editPlace.rating;
+      _isVisited = editPlace.isVisited;
+      _isWishlist = editPlace.isWishlist;
+      _lat = editPlace.latitude;
+      _lng = editPlace.longitude;
+      _imagePath = editPlace.imageUrl;
+      _imageType = editPlace.imageType;
+      if (_lat != null) _latController.text = _lat.toString();
+      if (_lng != null) _lngController.text = _lng.toString();
+    });
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        setState(() {
+          _imagePath = image.path;
+          _imageType = 'file';
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to pick image: $e')),
+      );
+    }
+  }
+
+  void _showImagePickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.cardSurface,
+      elevation: 8,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.p24, vertical: AppSizes.p16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                AppSizes.gapH24,
+                Text(
+                  'Choose Image',
+                  style: AppTypography.title.copyWith(fontWeight: FontWeight.bold, fontSize: 20),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Select how you would like to add an image.',
+                  style: AppTypography.caption,
+                ),
+                AppSizes.gapH24,
+                _buildPickerOptionTile(
+                  icon: Icons.camera_alt_rounded,
+                  title: 'Camera',
+                  subtitle: 'Take a new picture',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                AppSizes.gapH12,
+                _buildPickerOptionTile(
+                  icon: Icons.photo_library_rounded,
+                  title: 'Gallery',
+                  subtitle: 'Choose from your gallery',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+                AppSizes.gapH12,
+                _buildPickerOptionTile(
+                  icon: Icons.image_outlined,
+                  title: 'Default Image',
+                  subtitle: 'Use bundled category image',
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _imagePath = 'assets/images/clothing/default_1.jpg';
+                      _imageType = 'asset';
+                    });
+                  },
+                ),
+                AppSizes.gapH24,
+                SizedBox(
+                  width: double.infinity,
+                  child: GNButton(
+                    label: 'Cancel',
+                    variant: GNButtonVariant.secondary,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPickerOptionTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceFaint,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: AppColors.primary, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: AppTypography.bodyEmphasis.copyWith(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 2),
+                      Text(subtitle, style: AppTypography.caption),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageWidget(String type, String? path) {
+    if (path == null || path.isEmpty) {
+      return Container(color: AppColors.surfaceFaint);
+    }
+    if (type == 'file') {
+      final file = File(path);
+      if (file.existsSync()) {
+        return Image.file(file, fit: BoxFit.cover);
+      } else {
+        return Container(
+          color: AppColors.surfaceFaint,
+          child: const Center(
+            child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 48),
+          ),
+        );
+      }
+    } else if (type == 'asset') {
+      return Image.asset(path, fit: BoxFit.cover, errorBuilder: (_, __, ___) {
+        return Container(color: AppColors.surfaceFaint);
+      });
+    } else {
+      return Image.network(path, fit: BoxFit.cover, errorBuilder: (_, __, ___) {
+        return Container(color: AppColors.surfaceFaint);
+      });
+    }
   }
 
   @override
@@ -62,6 +289,8 @@ class _AddClothingPageState extends State<AddClothingPage> {
     _nameController.dispose();
     _descController.dispose();
     _locController.dispose();
+    _latController.dispose();
+    _lngController.dispose();
     super.dispose();
   }
 
@@ -77,6 +306,8 @@ class _AddClothingPageState extends State<AddClothingPage> {
         _lat = result.latitude;
         _lng = result.longitude;
         _locController.text = result.address;
+        _latController.text = _lat.toString();
+        _lngController.text = _lng.toString();
       });
     }
   }
@@ -93,12 +324,38 @@ class _AddClothingPageState extends State<AddClothingPage> {
       final placemarks = await _geocoding.placemarkFromCoordinates(lat, lng);
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
-        final parts = [
-          if (place.street != null && place.street!.isNotEmpty) place.street,
-          if (place.subLocality != null && place.subLocality!.isNotEmpty) place.subLocality,
-          if (place.locality != null && place.locality!.isNotEmpty) place.locality,
-          if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) place.administrativeArea,
-        ];
+        final name = place.name;
+        final street = place.street;
+        final subLocality = place.subLocality;
+        final locality = place.locality;
+        final adminArea = place.administrativeArea;
+
+        final isPlusCode = name != null && name.contains('+');
+
+        final parts = <String>[];
+        if (name != null && name.isNotEmpty && !isPlusCode && name != street) {
+          final isJustNumber = double.tryParse(name.replaceAll(RegExp(r'[^\d.]'), '')) != null;
+          if (!isJustNumber) {
+            parts.add(name);
+          }
+        }
+        if (street != null && street.isNotEmpty) {
+          parts.add(street);
+        }
+        if (subLocality != null && subLocality.isNotEmpty && subLocality != name) {
+          parts.add(subLocality);
+        }
+        if (locality != null && locality.isNotEmpty) {
+          parts.add(locality);
+        }
+        if (adminArea != null && adminArea.isNotEmpty) {
+          parts.add(adminArea);
+        }
+
+        if (parts.isEmpty && name != null) {
+          parts.add(name);
+        }
+
         setState(() {
           _locController.text = parts.join(', ');
         });
@@ -150,17 +407,78 @@ class _AddClothingPageState extends State<AddClothingPage> {
     }
   }
 
-  void _saveForm() {
+  void _saveForm() async {
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Saved ${_nameController.text} to Clothing!'),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      context.pop();
+      final name = _nameController.text.trim();
+      final desc = _descController.text.trim();
+      final loc = _locController.text.trim();
+
+      if (loc.isEmpty) {
+        _showSnackbar('Location/Address is required.');
+        return;
+      }
+
+      final places = ref.read(placesListProvider).value ?? [];
+      final isDuplicate = places.any((p) =>
+          p.name.toLowerCase() == name.toLowerCase() &&
+          p.id != widget.editPlaceId &&
+          p.type == 'clothing');
+
+      if (isDuplicate) {
+        _showSnackbar('A boutique with this name already exists.');
+        return;
+      }
+
+      final nowStr = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
+
+      if (widget.editPlaceId != null) {
+        final existing = places.firstWhere((p) => p.id == widget.editPlaceId);
+        final updated = PlaceModel(
+          id: existing.id,
+          name: name,
+          description: desc,
+          category: _selectedStoreType,
+          budget: _selectedBudget,
+          location: loc,
+          rating: _rating,
+          isVisited: _isVisited,
+          isWishlist: _isWishlist,
+          imageUrl: _imagePath ?? 'assets/images/clothing/default_1.jpg',
+          type: 'clothing',
+          latitude: _lat,
+          longitude: _lng,
+          dateAdded: existing.dateAdded,
+          lastUpdated: nowStr,
+          imageType: _imageType,
+        );
+        await ref.read(placesListProvider.notifier).updatePlace(updated);
+        _showSnackbar('Boutique details updated successfully.');
+      } else {
+        final newPlace = PlaceModel(
+          id: const Uuid().v4(),
+          name: name,
+          description: desc,
+          category: _selectedStoreType,
+          budget: _selectedBudget,
+          location: loc,
+          rating: _rating,
+          isVisited: _isVisited,
+          isWishlist: _isWishlist,
+          imageUrl: _imagePath ?? 'assets/images/clothing/default_1.jpg',
+          type: 'clothing',
+          latitude: _lat,
+          longitude: _lng,
+          dateAdded: nowStr.split(' ').first,
+          lastUpdated: nowStr,
+          imageType: _imageType,
+        );
+        await ref.read(placesListProvider.notifier).addPlace(newPlace);
+        _showSnackbar('Boutique saved successfully.');
+      }
+
+      if (mounted) {
+        context.pop();
+      }
     }
   }
 
@@ -177,7 +495,7 @@ class _AddClothingPageState extends State<AddClothingPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('New Boutique', style: AppTypography.title),
+        title: Text(widget.editPlaceId != null ? 'Edit Boutique' : 'New Boutique', style: AppTypography.title),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
           onPressed: () => context.pop(),
@@ -200,36 +518,33 @@ class _AddClothingPageState extends State<AddClothingPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Premium Image Hero Header Section
-                    ClipRRect(
+                    InkWell(
+                      onTap: _showImagePickerOptions,
                       borderRadius: BorderRadius.circular(AppSizes.r24),
-                      child: Container(
-                        height: 180,
-                        width: double.infinity,
-                        decoration: const BoxDecoration(
-                          color: AppColors.surfaceFaint,
-                        ),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image.network(
-                              'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=60',
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: Colors.purple.shade50,
-                              ),
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.black.withValues(alpha: 0.1),
-                                    Colors.black.withValues(alpha: 0.85),
-                                  ],
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(AppSizes.r24),
+                        child: Container(
+                          height: 180,
+                          width: double.infinity,
+                          decoration: const BoxDecoration(
+                            color: AppColors.surfaceFaint,
+                          ),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              _buildImageWidget(_imageType, _imagePath),
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.black.withValues(alpha: 0.1),
+                                      Colors.black.withValues(alpha: 0.85),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
                             Positioned(
                               bottom: AppSizes.p16,
                               left: AppSizes.p16,
@@ -277,6 +592,7 @@ class _AddClothingPageState extends State<AddClothingPage> {
                         ),
                       ),
                     ),
+                  ),
                     AppSizes.gapH24,
 
                     // Card 1: Store Details
@@ -530,6 +846,7 @@ class _AddClothingPageState extends State<AddClothingPage> {
                                 children: [
                                   Expanded(
                                     child: TextFormField(
+                                      controller: _latController,
                                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                       decoration: const InputDecoration(
                                         labelText: 'Latitude',
@@ -556,6 +873,7 @@ class _AddClothingPageState extends State<AddClothingPage> {
                                   AppSizes.gapW16,
                                   Expanded(
                                     child: TextFormField(
+                                      controller: _lngController,
                                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                       decoration: const InputDecoration(
                                         labelText: 'Longitude',

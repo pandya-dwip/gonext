@@ -1,62 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/components/gn_card.dart';
 import '../../../../shared/components/gn_chip.dart';
-import 'package:go_router/go_router.dart';
+import '../../../../shared/components/gn_button.dart';
+import '../../data/models/place_model.dart';
+import '../providers/place_provider.dart';
 
 /// RestaurantsPage displays saved dining spots with search, chips filters,
-/// and vertical 4:3 standard cards with network photography.
-class RestaurantsPage extends StatefulWidget {
+/// and vertical 4:3 standard cards with local/network/asset photography.
+class RestaurantsPage extends ConsumerStatefulWidget {
   const RestaurantsPage({super.key});
 
   @override
-  State<RestaurantsPage> createState() => _RestaurantsPageState();
+  ConsumerState<RestaurantsPage> createState() => _RestaurantsPageState();
 }
 
-class _RestaurantsPageState extends State<RestaurantsPage> {
+class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
   final TextEditingController _searchController = TextEditingController();
-  String _activeFilter = 'All';
 
-  final List<Map<String, dynamic>> _mockRestaurants = [
-    {
-      'name': 'The Bombay Canteen',
-      'cuisine': 'Modern Indian',
-      'budget': '₹₹₹',
-      'rating': 4.7,
-      'isWishlist': false,
-      'imageUrl': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&auto=format&fit=crop&q=60',
-      'location': 'Kamala Mills, Lower Parel, Mumbai',
-    },
-    {
-      'name': 'Tulum Café',
-      'cuisine': 'Mexican Bistro',
-      'budget': '₹₹',
-      'rating': 4.8,
-      'isWishlist': true,
-      'imageUrl': 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500&auto=format&fit=crop&q=60',
-      'location': 'Carter Road, Bandra West, Mumbai',
-    },
-    {
-      'name': 'The Green Olive',
-      'cuisine': 'Mediterranean',
-      'budget': '₹',
-      'rating': 4.5,
-      'isWishlist': false,
-      'imageUrl': 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=500&auto=format&fit=crop&q=60',
-      'location': 'Khar West, Mumbai',
-    },
-    {
-      'name': 'Bella Italia',
-      'cuisine': 'Italian Pasta',
-      'budget': '₹₹',
-      'rating': 4.6,
-      'isWishlist': true,
-      'imageUrl': 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=500&auto=format&fit=crop&q=60',
-      'location': 'Powai, Mumbai',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Pre-populate search text from provider if it exists
+    _searchController.text = ref.read(placeSearchQueryProvider);
+  }
 
   @override
   void dispose() {
@@ -64,8 +35,181 @@ class _RestaurantsPageState extends State<RestaurantsPage> {
     super.dispose();
   }
 
+  void _showSortBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        final currentSort = ref.read(placeSortOptionProvider);
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('Sort Restaurants By', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+              ...PlaceSortOption.values.map((opt) {
+                String label = '';
+                switch (opt) {
+                  case PlaceSortOption.newest:
+                    label = 'Recently Added';
+                    break;
+                  case PlaceSortOption.oldest:
+                    label = 'Oldest Added';
+                    break;
+                  case PlaceSortOption.highestRated:
+                    label = 'Highest Rated';
+                    break;
+                  case PlaceSortOption.alphabetical:
+                    label = 'Alphabetical (A-Z)';
+                    break;
+                  case PlaceSortOption.recentlyUpdated:
+                    label = 'Recently Updated';
+                    break;
+                }
+                return RadioListTile<PlaceSortOption>(
+                  title: Text(label),
+                  value: opt,
+                  groupValue: currentSort,
+                  activeColor: AppColors.primary,
+                  onChanged: (val) {
+                    if (val != null) {
+                      ref.read(placeSortOptionProvider.notifier).state = val;
+                    }
+                    Navigator.pop(context);
+                  },
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showFilterOptions(String filterType) {
+    if (filterType == 'All') {
+      ref.read(restaurantCuisineFilterProvider.notifier).state = 'All';
+      ref.read(restaurantBudgetFilterProvider.notifier).state = 'All';
+      ref.read(restaurantVisitedFilterProvider.notifier).state = 'All';
+      ref.read(restaurantRatingFilterProvider.notifier).state = null;
+      return;
+    }
+
+    if (filterType == 'Cuisine') {
+      // Extract unique cuisines from database
+      final allPlaces = ref.read(placesListProvider).value ?? [];
+      final cuisines = allPlaces
+          .where((p) => p.type == 'restaurant')
+          .map((p) => p.category)
+          .toSet()
+          .toList();
+      cuisines.sort();
+
+      showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return SafeArea(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                ListTile(
+                  title: const Text('All Cuisines'),
+                  onTap: () {
+                    ref.read(restaurantCuisineFilterProvider.notifier).state = 'All';
+                    Navigator.pop(context);
+                  },
+                ),
+                ...cuisines.map((c) => ListTile(
+                  title: Text(c),
+                  onTap: () {
+                    ref.read(restaurantCuisineFilterProvider.notifier).state = c;
+                    Navigator.pop(context);
+                  },
+                )),
+              ],
+            ),
+          );
+        },
+      );
+    } else if (filterType == 'Budget') {
+      showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  title: const Text('All Budgets'),
+                  onTap: () {
+                    ref.read(restaurantBudgetFilterProvider.notifier).state = 'All';
+                    Navigator.pop(context);
+                  },
+                ),
+                ...['₹', '₹₹', '₹₹₹'].map((b) => ListTile(
+                  title: Text(b == '₹' ? '₹ (Inexpensive)' : b == '₹₹' ? '₹₹ (Moderate)' : '₹₹₹ (Expensive)'),
+                  onTap: () {
+                    ref.read(restaurantBudgetFilterProvider.notifier).state = b;
+                    Navigator.pop(context);
+                  },
+                )),
+              ],
+            ),
+          );
+        },
+      );
+    } else if (filterType == 'Rating') {
+      showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  title: const Text('Any Rating'),
+                  onTap: () {
+                    ref.read(restaurantRatingFilterProvider.notifier).state = null;
+                    Navigator.pop(context);
+                  },
+                ),
+                ...[3.0, 4.0, 4.5].map((r) => ListTile(
+                  title: Text('$r+ Stars'),
+                  onTap: () {
+                    ref.read(restaurantRatingFilterProvider.notifier).state = r;
+                    Navigator.pop(context);
+                  },
+                )),
+              ],
+            ),
+          );
+        },
+      );
+    } else if (filterType == 'Wishlist-only') {
+      final current = ref.read(restaurantVisitedFilterProvider);
+      ref.read(restaurantVisitedFilterProvider.notifier).state =
+          current == 'Wishlist-only' ? 'All' : 'Wishlist-only';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final restaurants = ref.watch(filteredRestaurantsProvider);
+
+    final activeCuisine = ref.watch(restaurantCuisineFilterProvider);
+    final activeBudget = ref.watch(restaurantBudgetFilterProvider);
+    final activeVisited = ref.watch(restaurantVisitedFilterProvider);
+    final activeRating = ref.watch(restaurantRatingFilterProvider);
+
+    final hasActiveFilter = activeCuisine != 'All' ||
+        activeBudget != 'All' ||
+        activeVisited == 'Wishlist-only' ||
+        activeRating != null;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -85,7 +229,7 @@ class _RestaurantsPageState extends State<RestaurantsPage> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${_mockRestaurants.length} saved places',
+                    '${restaurants.length} saved places',
                     style: AppTypography.caption,
                   ),
                 ],
@@ -110,6 +254,9 @@ class _RestaurantsPageState extends State<RestaurantsPage> {
                     Expanded(
                       child: TextField(
                         controller: _searchController,
+                        onChanged: (val) {
+                          ref.read(placeSearchQueryProvider.notifier).state = val;
+                        },
                         decoration: InputDecoration(
                           hintText: 'Search cuisine or place name...',
                           hintStyle: AppTypography.body.copyWith(color: AppColors.textMuted),
@@ -121,7 +268,10 @@ class _RestaurantsPageState extends State<RestaurantsPage> {
                         ),
                       ),
                     ),
-                    const Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),
+                    GestureDetector(
+                      onTap: _showSortBottomSheet,
+                      child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),
+                    ),
                   ],
                 ),
               ),
@@ -135,71 +285,98 @@ class _RestaurantsPageState extends State<RestaurantsPage> {
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
-                  _buildFilterChip('All'),
+                  _buildFilterChip('All', !hasActiveFilter),
                   AppSizes.gapW8,
-                  _buildFilterChip('Cuisine'),
+                  _buildFilterChip('Cuisine', activeCuisine != 'All', suffixText: activeCuisine != 'All' ? activeCuisine : null),
                   AppSizes.gapW8,
-                  _buildFilterChip('Budget'),
+                  _buildFilterChip('Budget', activeBudget != 'All', suffixText: activeBudget != 'All' ? activeBudget : null),
                   AppSizes.gapW8,
-                  _buildFilterChip('Rating'),
+                  _buildFilterChip('Rating', activeRating != null, suffixText: activeRating != null ? '${activeRating}+' : null),
                   AppSizes.gapW8,
-                  _buildFilterChip('Wishlist-only'),
+                  _buildFilterChip('Wishlist-only', activeVisited == 'Wishlist-only'),
                 ],
               ),
             ),
             AppSizes.gapH16,
 
-            // Standard 4:3 card list scroll
+            // Standard 4:3 card list scroll OR empty state
             Expanded(
-              child: ListView.separated(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(AppSizes.p16, 0, AppSizes.p16, 120.0),
-                itemCount: _mockRestaurants.length,
-                separatorBuilder: (context, index) => AppSizes.gapH24,
-                itemBuilder: (context, index) {
-                  final rest = _mockRestaurants[index];
+              child: restaurants.isEmpty
+                  ? GNEmptyState(
+                      title: 'No Restaurants Yet',
+                      subtitle: 'Save dining spots, bistros, and cafés to your dashboard.',
+                      buttonLabel: 'Add Restaurant',
+                      icon: Icons.restaurant_rounded,
+                      onButtonPressed: () => context.push('/add-restaurant'),
+                    )
+                  : ListView.separated(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(AppSizes.p16, 0, AppSizes.p16, 120.0),
+                      itemCount: restaurants.length,
+                      separatorBuilder: (context, index) => AppSizes.gapH24,
+                      itemBuilder: (context, index) {
+                        final rest = restaurants[index];
 
-                  return Column(
-                    children: [
-                      GNCard(
-                        variant: GNCardVariant.standard,
-                        title: rest['name'] as String,
-                        subtitle: '${rest['cuisine']} • ${rest['budget']}',
-                        rating: rest['rating'] as double,
-                        isWishlist: rest['isWishlist'] as bool,
-                        icon: Icons.restaurant_rounded,
-                        imageUrl: rest['imageUrl'] as String?,
-                        imageAspectRatio: 4 / 3, // Standard M3 4:3 crop
-                        location: rest['location'] as String?,
-                        category: rest['cuisine'] as String?,
-                        onTap: () => context.push('/restaurant-detail/rest-${index + 1}'),
-                        onWishlistTap: () {
-                          setState(() {
-                            rest['isWishlist'] = !(rest['isWishlist'] as bool);
-                          });
-                        },
-                      ),
-                      AppSizes.gapH8,
-                      // Inline tags row inside card footer bounds
-                      Row(
-                        children: [
-                          GNChip(
-                            label: rest['cuisine'] as String,
-                            variant: GNChipVariant.status,
-                            statusTone: GNStatusTone.info,
-                          ),
-                          AppSizes.gapW8,
-                          GNChip(
-                            label: rest['budget'] as String,
-                            variant: GNChipVariant.status,
-                            statusTone: GNStatusTone.success,
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                },
-              ),
+                        return Column(
+                          children: [
+                            GNCard(
+                              variant: GNCardVariant.standard,
+                              title: rest.name,
+                              subtitle: '${rest.category} • ${rest.budget}',
+                              rating: rest.rating,
+                              isWishlist: rest.isWishlist,
+                              icon: Icons.restaurant_rounded,
+                              imageUrl: rest.imageUrl,
+                              imageType: rest.imageType,
+                              imageAspectRatio: 4 / 3, // Standard M3 4:3 crop
+                              location: rest.location,
+                              category: rest.category,
+                              onTap: () => context.push('/restaurant-detail/${rest.id}'),
+                              onWishlistTap: () async {
+                                final updated = PlaceModel(
+                                  id: rest.id,
+                                  name: rest.name,
+                                  description: rest.description,
+                                  category: rest.category,
+                                  budget: rest.budget,
+                                  location: rest.location,
+                                  rating: rest.rating,
+                                  isVisited: rest.isVisited,
+                                  isWishlist: !rest.isWishlist,
+                                  imageUrl: rest.imageUrl,
+                                  type: rest.type,
+                                  entryFee: rest.entryFee,
+                                  bestTime: rest.bestTime,
+                                  latitude: rest.latitude,
+                                  longitude: rest.longitude,
+                                  dateAdded: rest.dateAdded,
+                                  lastUpdated: rest.lastUpdated,
+                                  imageType: rest.imageType,
+                                );
+                                await ref.read(placesListProvider.notifier).updatePlace(updated);
+                              },
+                            ),
+                            AppSizes.gapH8,
+                            // Inline tags row inside card footer bounds
+                            Row(
+                              children: [
+                                GNChip(
+                                  label: rest.category,
+                                  variant: GNChipVariant.status,
+                                  statusTone: GNStatusTone.info,
+                                ),
+                                AppSizes.gapW8,
+                                GNChip(
+                                  label: rest.budget,
+                                  variant: GNChipVariant.status,
+                                  statusTone: GNStatusTone.success,
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -207,17 +384,73 @@ class _RestaurantsPageState extends State<RestaurantsPage> {
     );
   }
 
-  Widget _buildFilterChip(String label) {
-    final isSelected = _activeFilter == label;
+  Widget _buildFilterChip(String label, bool isSelected, {String? suffixText}) {
+    final displayLabel = suffixText != null ? '$label ($suffixText)' : label;
     return GNChip(
-      label: label,
+      label: displayLabel,
       variant: GNChipVariant.filter,
       isSelected: isSelected,
-      onTap: () {
-        setState(() {
-          _activeFilter = label;
-        });
-      },
+      onTap: () => _showFilterOptions(label),
+    );
+  }
+}
+
+class GNEmptyState extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String buttonLabel;
+  final VoidCallback onButtonPressed;
+  final IconData icon;
+
+  const GNEmptyState({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.buttonLabel,
+    required this.onButtonPressed,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSizes.p24, vertical: AppSizes.p32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSizes.p24),
+              decoration: const BoxDecoration(
+                color: AppColors.surfaceFaint,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 64, color: AppColors.primary.withValues(alpha: 0.8)),
+            ),
+            AppSizes.gapH24,
+            Text(
+              title,
+              style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            AppSizes.gapH8,
+            Text(
+              subtitle,
+              style: AppTypography.caption,
+              textAlign: TextAlign.center,
+            ),
+            AppSizes.gapH24,
+            SizedBox(
+              width: 200,
+              child: GNButton(
+                label: buttonLabel,
+                onPressed: onButtonPressed,
+                variant: GNButtonVariant.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

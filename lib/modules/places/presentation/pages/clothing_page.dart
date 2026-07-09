@@ -1,62 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/components/gn_card.dart';
 import '../../../../shared/components/gn_chip.dart';
-import 'package:go_router/go_router.dart';
+import '../../../../shared/components/gn_button.dart';
+import '../../data/models/place_model.dart';
+import '../providers/place_provider.dart';
+import 'restaurants_page.dart'; // Import GNEmptyState
 
 /// ClothingPage displays boutique streetwear and vintage collections
-/// featuring a vertical card ratio (4:5 crop) with network lifestyle images.
-class ClothingPage extends StatefulWidget {
+/// featuring a vertical card ratio (4:5 crop) with local/network/asset lifestyle images.
+class ClothingPage extends ConsumerStatefulWidget {
   const ClothingPage({super.key});
 
   @override
-  State<ClothingPage> createState() => _ClothingPageState();
+  ConsumerState<ClothingPage> createState() => _ClothingPageState();
 }
 
-class _ClothingPageState extends State<ClothingPage> {
+class _ClothingPageState extends ConsumerState<ClothingPage> {
   final TextEditingController _searchController = TextEditingController();
-  String _activeFilter = 'All';
 
-  final List<Map<String, dynamic>> _mockClothing = [
-    {
-      'name': 'Urban Threads',
-      'type': 'Boutique Store',
-      'budget': '₹₹',
-      'rating': 4.3,
-      'isWishlist': true,
-      'imageUrl': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&auto=format&fit=crop&q=60',
-      'location': 'Linking Road, Bandra West, Mumbai',
-    },
-    {
-      'name': 'Tokyo Streetwear',
-      'type': 'Streetwear Hub',
-      'budget': '₹₹₹',
-      'rating': 4.6,
-      'isWishlist': false,
-      'imageUrl': 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=500&auto=format&fit=crop&q=60',
-      'location': 'Colaba Causeway, South Mumbai',
-    },
-    {
-      'name': 'Vogue Boutique',
-      'type': 'Designer Atelier',
-      'budget': '₹₹₹₹',
-      'rating': 4.9,
-      'isWishlist': true,
-      'imageUrl': 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&auto=format&fit=crop&q=60',
-      'location': 'Palladium Mall, Lower Parel, Mumbai',
-    },
-    {
-      'name': 'Retro Thrift',
-      'type': 'Vintage/Thrift',
-      'budget': '₹',
-      'rating': 4.1,
-      'isWishlist': false,
-      'imageUrl': 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=500&auto=format&fit=crop&q=60',
-      'location': 'Hill Road, Bandra West, Mumbai',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _searchController.text = ref.read(placeSearchQueryProvider);
+  }
 
   @override
   void dispose() {
@@ -64,8 +35,150 @@ class _ClothingPageState extends State<ClothingPage> {
     super.dispose();
   }
 
+  void _showSortBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        final currentSort = ref.read(placeSortOptionProvider);
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('Sort Boutique Stores By', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+              ...PlaceSortOption.values.map((opt) {
+                String label = '';
+                switch (opt) {
+                  case PlaceSortOption.newest:
+                    label = 'Recently Added';
+                    break;
+                  case PlaceSortOption.oldest:
+                    label = 'Oldest Added';
+                    break;
+                  case PlaceSortOption.highestRated:
+                    label = 'Highest Rated';
+                    break;
+                  case PlaceSortOption.alphabetical:
+                    label = 'Alphabetical (A-Z)';
+                    break;
+                  case PlaceSortOption.recentlyUpdated:
+                    label = 'Recently Updated';
+                    break;
+                }
+                return RadioListTile<PlaceSortOption>(
+                  title: Text(label),
+                  value: opt,
+                  groupValue: currentSort,
+                  activeColor: AppColors.primary,
+                  onChanged: (val) {
+                    if (val != null) {
+                      ref.read(placeSortOptionProvider.notifier).state = val;
+                    }
+                    Navigator.pop(context);
+                  },
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showFilterOptions(String filterType) {
+    if (filterType == 'All') {
+      ref.read(clothingTypeFilterProvider.notifier).state = 'All';
+      ref.read(clothingBudgetFilterProvider.notifier).state = 'All';
+      ref.read(clothingVisitedFilterProvider.notifier).state = 'All';
+      return;
+    }
+
+    if (filterType == 'Store Type') {
+      final allPlaces = ref.read(placesListProvider).value ?? [];
+      final types = allPlaces
+          .where((p) => p.type == 'clothing')
+          .map((p) => p.category)
+          .toSet()
+          .toList();
+      types.sort();
+
+      showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return SafeArea(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                ListTile(
+                  title: const Text('All Store Types'),
+                  onTap: () {
+                    ref.read(clothingTypeFilterProvider.notifier).state = 'All';
+                    Navigator.pop(context);
+                  },
+                ),
+                ...types.map((t) => ListTile(
+                  title: Text(t),
+                  onTap: () {
+                    ref.read(clothingTypeFilterProvider.notifier).state = t;
+                    Navigator.pop(context);
+                  },
+                )),
+              ],
+            ),
+          );
+        },
+      );
+    } else if (filterType == 'Budget') {
+      showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  title: const Text('All Budgets'),
+                  onTap: () {
+                    ref.read(clothingBudgetFilterProvider.notifier).state = 'All';
+                    Navigator.pop(context);
+                  },
+                ),
+                ...['Low Range', 'Mid Range', 'High Range', 'Luxury/Premium'].map((b) => ListTile(
+                  title: Text(b),
+                  onTap: () {
+                    ref.read(clothingBudgetFilterProvider.notifier).state = b;
+                    Navigator.pop(context);
+                  },
+                )),
+              ],
+            ),
+          );
+        },
+      );
+    } else if (filterType == 'Wishlist-only') {
+      final current = ref.read(clothingVisitedFilterProvider);
+      ref.read(clothingVisitedFilterProvider.notifier).state =
+          current == 'Wishlist-only' ? 'All' : 'Wishlist-only';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final boutiques = ref.watch(filteredClothingProvider);
+
+    final activeType = ref.watch(clothingTypeFilterProvider);
+    final activeBudget = ref.watch(clothingBudgetFilterProvider);
+    final activeVisited = ref.watch(clothingVisitedFilterProvider);
+
+    final hasActiveFilter = activeType != 'All' ||
+        activeBudget != 'All' ||
+        activeVisited == 'Wishlist-only';
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -85,7 +198,7 @@ class _ClothingPageState extends State<ClothingPage> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${_mockClothing.length} saved boutiques',
+                    '${boutiques.length} saved boutiques',
                     style: AppTypography.caption,
                   ),
                 ],
@@ -110,8 +223,11 @@ class _ClothingPageState extends State<ClothingPage> {
                     Expanded(
                       child: TextField(
                         controller: _searchController,
+                        onChanged: (val) {
+                          ref.read(placeSearchQueryProvider.notifier).state = val;
+                        },
                         decoration: InputDecoration(
-                          hintText: 'Search stores, designers, tags...',
+                          hintText: 'Search brand, type, or place name...',
                           hintStyle: AppTypography.body.copyWith(color: AppColors.textMuted),
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
@@ -121,85 +237,112 @@ class _ClothingPageState extends State<ClothingPage> {
                         ),
                       ),
                     ),
-                    const Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),
+                    GestureDetector(
+                      onTap: _showSortBottomSheet,
+                      child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),
+                    ),
                   ],
                 ),
               ),
             ),
             AppSizes.gapH12,
 
-            // Filter chips
+            // Horizontal Filter Chips list
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
-                  _buildFilterChip('All'),
+                  _buildFilterChip('All', !hasActiveFilter),
                   AppSizes.gapW8,
-                  _buildFilterChip('Boutiques'),
+                  _buildFilterChip('Store Type', activeType != 'All', suffixText: activeType != 'All' ? activeType : null),
                   AppSizes.gapW8,
-                  _buildFilterChip('Thrift/Vintage'),
+                  _buildFilterChip('Budget', activeBudget != 'All', suffixText: activeBudget != 'All' ? activeBudget : null),
                   AppSizes.gapW8,
-                  _buildFilterChip('Budget'),
-                  AppSizes.gapW8,
-                  _buildFilterChip('Rating'),
+                  _buildFilterChip('Wishlist-only', activeVisited == 'Wishlist-only'),
                 ],
               ),
             ),
             AppSizes.gapH16,
 
-            // 4:5 Card Scroll
+            // 4:5 Card Grid List OR Empty State
             Expanded(
-              child: ListView.separated(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(AppSizes.p16, 0, AppSizes.p16, 120.0),
-                itemCount: _mockClothing.length,
-                separatorBuilder: (context, index) => AppSizes.gapH24,
-                itemBuilder: (context, index) {
-                  final store = _mockClothing[index];
+              child: boutiques.isEmpty
+                  ? GNEmptyState(
+                      title: 'No Clothing Stores Yet',
+                      subtitle: 'Save boutiques, streetwear hubs, and fashion ateliers.',
+                      buttonLabel: 'Add Clothing Store',
+                      icon: Icons.checkroom_rounded,
+                      onButtonPressed: () => context.push('/add-clothing'),
+                    )
+                  : ListView.separated(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(AppSizes.p16, 0, AppSizes.p16, 120.0),
+                      itemCount: boutiques.length,
+                      separatorBuilder: (context, index) => AppSizes.gapH24,
+                      itemBuilder: (context, index) {
+                        final store = boutiques[index];
 
-                  return Column(
-                    children: [
-                      GNCard(
-                        variant: GNCardVariant.standard,
-                        title: store['name'] as String,
-                        subtitle: '${store['type']} • ${store['budget']}',
-                        rating: store['rating'] as double,
-                        isWishlist: store['isWishlist'] as bool,
-                        icon: Icons.checkroom_rounded,
-                        imageUrl: store['imageUrl'] as String?,
-                        imageAspectRatio: 4 / 5, // Slightly taller 4:5 fashion crop
-                        location: store['location'] as String?,
-                        category: store['type'] as String?,
-                        onTap: () => context.push('/clothing-detail/cloth-${index + 1}'),
-                        onWishlistTap: () {
-                          setState(() {
-                            store['isWishlist'] = !(store['isWishlist'] as bool);
-                          });
-                        },
-                      ),
-                      AppSizes.gapH8,
-                      Row(
-                        children: [
-                          GNChip(
-                            label: store['type'] as String,
-                            variant: GNChipVariant.status,
-                            statusTone: GNStatusTone.info,
-                            leadingIcon: Icons.style_rounded,
-                          ),
-                          AppSizes.gapW8,
-                          GNChip(
-                            label: store['budget'] as String,
-                            variant: GNChipVariant.status,
-                            statusTone: GNStatusTone.success,
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                },
-              ),
+                        return Column(
+                          children: [
+                            GNCard(
+                              variant: GNCardVariant.standard,
+                              title: store.name,
+                              subtitle: '${store.category} • ${store.budget}',
+                              rating: store.rating,
+                              isWishlist: store.isWishlist,
+                              icon: Icons.checkroom_rounded,
+                              imageUrl: store.imageUrl,
+                              imageType: store.imageType,
+                              imageAspectRatio: 4 / 5, // Custom clothing 4:5 crop ratio
+                              location: store.location,
+                              category: store.category,
+                              onTap: () => context.push('/clothing-detail/${store.id}'),
+                              onWishlistTap: () async {
+                                final updated = PlaceModel(
+                                  id: store.id,
+                                  name: store.name,
+                                  description: store.description,
+                                  category: store.category,
+                                  budget: store.budget,
+                                  location: store.location,
+                                  rating: store.rating,
+                                  isVisited: store.isVisited,
+                                  isWishlist: !store.isWishlist,
+                                  imageUrl: store.imageUrl,
+                                  type: store.type,
+                                  entryFee: store.entryFee,
+                                  bestTime: store.bestTime,
+                                  latitude: store.latitude,
+                                  longitude: store.longitude,
+                                  dateAdded: store.dateAdded,
+                                  lastUpdated: store.lastUpdated,
+                                  imageType: store.imageType,
+                                );
+                                await ref.read(placesListProvider.notifier).updatePlace(updated);
+                              },
+                            ),
+                            AppSizes.gapH8,
+                            Row(
+                              children: [
+                                GNChip(
+                                  label: store.category,
+                                  variant: GNChipVariant.status,
+                                  statusTone: GNStatusTone.info,
+                                ),
+                                AppSizes.gapW8,
+                                GNChip(
+                                  label: store.budget,
+                                  variant: GNChipVariant.status,
+                                  statusTone: GNStatusTone.success,
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -207,17 +350,13 @@ class _ClothingPageState extends State<ClothingPage> {
     );
   }
 
-  Widget _buildFilterChip(String label) {
-    final isSelected = _activeFilter == label;
+  Widget _buildFilterChip(String label, bool isSelected, {String? suffixText}) {
+    final displayLabel = suffixText != null ? '$label ($suffixText)' : label;
     return GNChip(
-      label: label,
+      label: displayLabel,
       variant: GNChipVariant.filter,
       isSelected: isSelected,
-      onTap: () {
-        setState(() {
-          _activeFilter = label;
-        });
-      },
+      onTap: () => _showFilterOptions(label),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/theme/app_typography.dart';
@@ -24,6 +25,7 @@ class GNCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onWishlistTap;
   final String? imageUrl;
+  final String imageType;
   final double imageAspectRatio; // For standard card (e.g. 4/3, 4/5, 16/9)
   final String? location;
   final String? category;
@@ -41,6 +43,7 @@ class GNCard extends StatelessWidget {
     this.onTap,
     this.onWishlistTap,
     this.imageUrl,
+    this.imageType = 'network',
     this.imageAspectRatio = 4 / 3,
     this.location,
     this.category,
@@ -486,38 +489,69 @@ class GNCard extends StatelessWidget {
   // Helper placeholder drawer (supporting Network Images with clean load transitions)
   Widget _buildImagePlaceholder(BuildContext context) {
     if (imageUrl != null && imageUrl!.isNotEmpty) {
-      return Image.network(
-        imageUrl!,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
+      if (imageType == 'file') {
+        final file = File(imageUrl!);
+        if (file.existsSync()) {
+          return Image.file(file, fit: BoxFit.cover);
+        } else {
           return Container(
             color: AppColors.surfaceFaint,
             child: const Center(
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 24),
+            ),
+          );
+        }
+      } else if (imageType == 'asset') {
+        return Image.asset(
+          imageUrl!,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) {
+            return Container(
+              color: AppColors.surfaceFaint,
+              child: Center(
+                child: Icon(
+                  icon ?? Icons.landscape_rounded,
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                  size: AppSizes.s32,
                 ),
               ),
-            ),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            color: AppColors.surfaceFaint,
-            child: Center(
-              child: Icon(
-                Icons.error_outline_rounded,
-                color: AppColors.error.withValues(alpha: 0.5),
-                size: AppSizes.s24,
+            );
+          },
+        );
+      } else {
+        return Image.network(
+          imageUrl!,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              color: AppColors.surfaceFaint,
+              child: const Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  ),
+                ),
               ),
-            ),
-          );
-        },
-      );
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: AppColors.surfaceFaint,
+              child: Center(
+                child: Icon(
+                  Icons.error_outline_rounded,
+                  color: AppColors.error.withValues(alpha: 0.5),
+                  size: AppSizes.s24,
+                ),
+              ),
+            );
+          },
+        );
+      }
     }
 
     return Container(
