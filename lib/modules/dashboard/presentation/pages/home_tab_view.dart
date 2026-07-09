@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -90,7 +91,7 @@ class HomeTabView extends ConsumerWidget {
                         color: AppColors.textPrimary,
                         size: AppSizes.s24,
                       ),
-                      onPressed: () {},
+                      onPressed: () => context.push('/settings'),
                     ),
                   ),
                 ],
@@ -107,42 +108,26 @@ class HomeTabView extends ConsumerWidget {
                       label: 'Add Restaurant',
                       leadingIcon: Icons.restaurant_rounded,
                       variant: GNChipVariant.category,
-                      onTap: () {},
+                      onTap: () => context.push('/add-restaurant'),
                     ),
                     AppSizes.gapW8,
                     GNChip(
                       label: 'Add Clothing',
                       leadingIcon: Icons.checkroom_rounded,
                       variant: GNChipVariant.category,
-                      onTap: () {},
+                      onTap: () => context.push('/add-clothing'),
                     ),
                     AppSizes.gapW8,
                     GNChip(
                       label: 'Add Visit',
                       leadingIcon: Icons.travel_explore_rounded,
                       variant: GNChipVariant.category,
-                      onTap: () {},
+                      onTap: () => context.push('/add-visit'),
                     ),
                   ],
                 ),
               ),
               AppSizes.gapH32,
-
-              // 3. [COMMENTED OUT] Today's Inspiration
-              /*
-              Text(
-                'TODAY\'S INSPIRATION',
-                style: AppTypography.overline,
-              ),
-              AppSizes.gapH8,
-              const GNCard(
-                variant: GNCardVariant.hero,
-                overline: 'HAVE YOU BEEN HERE YET?',
-                title: 'The Bombay Canteen',
-                icon: Icons.restaurant_rounded,
-              ),
-              AppSizes.gapH32,
-              */
 
               // 4. Statistics Row
               Row(
@@ -177,36 +162,7 @@ class HomeTabView extends ConsumerWidget {
               ),
               AppSizes.gapH32,
 
-              // 5. [COMMENTED OUT] Continue exploring
-              /*
-              _buildSectionHeader(
-                context,
-                title: 'Continue exploring',
-                overline: 'CONTINUE EXPLORING',
-                onSeeAllPressed: () {},
-              ),
-              SizedBox(
-                height: 220,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  children: const [
-                    GNCard(
-                      variant: GNCardVariant.compact,
-                      title: 'Tulum Café',
-                      subtitle: 'Restaurant',
-                      isWishlist: true,
-                      icon: Icons.restaurant_rounded,
-                    ),
-                    ...
-                  ],
-                ),
-              ),
-              AppSizes.gapH24,
-              */
-
-              // 6. Section 5 Replacement: Category-Specific Previews
-
+              // 6. Previews
               // A. Restaurants Preview
               _buildSectionHeader(
                 context,
@@ -223,13 +179,14 @@ class HomeTabView extends ConsumerWidget {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
-                  children: const [
+                  children: [
                     GNCard(
                       variant: GNCardVariant.compact,
                       title: 'The Bombay Canteen',
                       subtitle: 'Modern Indian • ₹₹₹',
                       icon: Icons.restaurant_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/restaurant-detail/rest-1'),
                     ),
                     GNCard(
                       variant: GNCardVariant.compact,
@@ -238,6 +195,7 @@ class HomeTabView extends ConsumerWidget {
                       isWishlist: true,
                       icon: Icons.restaurant_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/restaurant-detail/rest-2'),
                     ),
                     GNCard(
                       variant: GNCardVariant.compact,
@@ -245,6 +203,7 @@ class HomeTabView extends ConsumerWidget {
                       subtitle: 'Mediterranean • ₹',
                       icon: Icons.restaurant_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/restaurant-detail/rest-3'),
                     ),
                     GNCard(
                       variant: GNCardVariant.compact,
@@ -252,6 +211,7 @@ class HomeTabView extends ConsumerWidget {
                       subtitle: 'Italian Bistro • ₹₹',
                       icon: Icons.restaurant_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/restaurant-detail/rest-4'),
                     ),
                     GNCard(
                       variant: GNCardVariant.compact,
@@ -259,6 +219,7 @@ class HomeTabView extends ConsumerWidget {
                       subtitle: 'Bakery • ₹',
                       icon: Icons.restaurant_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/restaurant-detail/rest-5'),
                     ),
                   ],
                 ),
@@ -281,7 +242,7 @@ class HomeTabView extends ConsumerWidget {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
-                  children: const [
+                  children: [
                     GNCard(
                       variant: GNCardVariant.compact,
                       title: 'Urban Threads',
@@ -289,6 +250,7 @@ class HomeTabView extends ConsumerWidget {
                       isWishlist: true,
                       icon: Icons.checkroom_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/clothing-detail/cloth-1'),
                     ),
                     GNCard(
                       variant: GNCardVariant.compact,
@@ -296,6 +258,7 @@ class HomeTabView extends ConsumerWidget {
                       subtitle: 'Boutique Store • ₹₹₹',
                       icon: Icons.checkroom_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/clothing-detail/cloth-2'),
                     ),
                     GNCard(
                       variant: GNCardVariant.compact,
@@ -303,6 +266,7 @@ class HomeTabView extends ConsumerWidget {
                       subtitle: 'Designer Atelier • ₹₹₹₹',
                       icon: Icons.checkroom_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/clothing-detail/cloth-3'),
                     ),
                     GNCard(
                       variant: GNCardVariant.compact,
@@ -310,6 +274,7 @@ class HomeTabView extends ConsumerWidget {
                       subtitle: 'Thrift Store • ₹',
                       icon: Icons.checkroom_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/clothing-detail/cloth-4'),
                     ),
                     GNCard(
                       variant: GNCardVariant.compact,
@@ -317,6 +282,7 @@ class HomeTabView extends ConsumerWidget {
                       subtitle: 'Designer Collective • ₹₹₹',
                       icon: Icons.checkroom_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1567401893930-7db7138b315d?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/clothing-detail/cloth-5'),
                     ),
                   ],
                 ),
@@ -339,7 +305,7 @@ class HomeTabView extends ConsumerWidget {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
-                  children: const [
+                  children: [
                     GNCard(
                       variant: GNCardVariant.compact,
                       title: 'Grand Canyon',
@@ -347,6 +313,7 @@ class HomeTabView extends ConsumerWidget {
                       isWishlist: true,
                       icon: Icons.travel_explore_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/place-detail/visit-1'),
                     ),
                     GNCard(
                       variant: GNCardVariant.compact,
@@ -354,6 +321,7 @@ class HomeTabView extends ConsumerWidget {
                       subtitle: 'Historical Site • ₹₹',
                       icon: Icons.travel_explore_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1508849789987-4e5333c12b78?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/place-detail/visit-2'),
                     ),
                     GNCard(
                       variant: GNCardVariant.compact,
@@ -361,6 +329,7 @@ class HomeTabView extends ConsumerWidget {
                       subtitle: 'City Landmark • Free',
                       icon: Icons.travel_explore_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/place-detail/visit-3'),
                     ),
                     GNCard(
                       variant: GNCardVariant.compact,
@@ -368,6 +337,7 @@ class HomeTabView extends ConsumerWidget {
                       subtitle: 'Heritage Gardens • ₹',
                       icon: Icons.travel_explore_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/place-detail/visit-4'),
                     ),
                     GNCard(
                       variant: GNCardVariant.compact,
@@ -375,24 +345,12 @@ class HomeTabView extends ConsumerWidget {
                       subtitle: 'Amusement Hub • ₹₹₹₹',
                       icon: Icons.travel_explore_rounded,
                       imageUrl: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=500&auto=format&fit=crop&q=60',
+                      onTap: () => context.push('/place-detail/visit-5'),
                     ),
                   ],
                 ),
               ),
               AppSizes.gapH24,
-
-              // 7. [COMMENTED OUT] Smart suggestions
-              /*
-              _buildSectionHeader(context, title: 'Smart suggestions', overline: 'SMART SUGGESTIONS'),
-              const GNCard(
-                variant: GNCardVariant.standard,
-                title: '3 cafes near places you\'ve visited',
-                subtitle: 'Based on your recent checks in Manhattan area.',
-                rating: 4.8,
-                icon: Icons.eco_rounded,
-              ),
-              AppSizes.gapH32,
-              */
 
               // 8. Wishlist preview
               _buildSectionHeader(
@@ -403,14 +361,8 @@ class HomeTabView extends ConsumerWidget {
                   ref.read(dashboardTabProvider.notifier).setTab(DashboardTab.wishlist);
                 },
               ),
-              _buildWishlistPreview(ref),
+              _buildWishlistPreview(context, ref),
               AppSizes.gapH32,
-
-              // 9. [REMOVED] Recent activity
-              /*
-              _buildSectionHeader(context, title: 'Recent activity', overline: 'RECENT ACTIVITY'),
-              _buildRecentActivityList(),
-              */
 
               // Extra padding for bottom bar
               AppSizes.gapH64,
@@ -485,12 +437,12 @@ class HomeTabView extends ConsumerWidget {
   }
 
   /// Builds the 2x2 Grid of Wishlist preview tiles (with +N overlay on the 4th item)
-  Widget _buildWishlistPreview(WidgetRef ref) {
+  Widget _buildWishlistPreview(BuildContext context, WidgetRef ref) {
     final previewItems = [
-      {'name': 'Tulum Cafe', 'icon': Icons.restaurant_rounded},
-      {'name': 'Tokyo Boutique', 'icon': Icons.checkroom_rounded},
-      {'name': 'Costa del Sol', 'icon': Icons.travel_explore_rounded},
-      {'name': 'Grand Canyon', 'icon': Icons.eco_rounded},
+      {'id': 'rest-2', 'name': 'Tulum Cafe', 'icon': Icons.restaurant_rounded, 'type': 'rest'},
+      {'id': 'cloth-1', 'name': 'Urban Threads', 'icon': Icons.checkroom_rounded, 'type': 'cloth'},
+      {'id': 'visit-3', 'name': 'Central Park NYC', 'icon': Icons.travel_explore_rounded, 'type': 'visit'},
+      {'id': 'visit-1', 'name': 'Grand Canyon', 'icon': Icons.eco_rounded, 'type': 'visit'},
     ];
 
     return GridView.builder(
@@ -512,21 +464,34 @@ class HomeTabView extends ConsumerWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Container(
-                color: AppColors.surfaceFaint,
-                padding: const EdgeInsets.all(AppSizes.p16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Icon(item['icon'] as IconData, color: AppColors.primary.withValues(alpha: 0.4)),
-                    Text(
-                      item['name'] as String,
-                      style: AppTypography.caption.copyWith(fontWeight: FontWeight.bold),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+              GestureDetector(
+                onTap: () {
+                  final id = item['id']!;
+                  final type = item['type']!;
+                  if (type == 'rest') {
+                    context.push('/restaurant-detail/$id');
+                  } else if (type == 'cloth') {
+                    context.push('/clothing-detail/$id');
+                  } else {
+                    context.push('/place-detail/$id');
+                  }
+                },
+                child: Container(
+                  color: AppColors.surfaceFaint,
+                  padding: const EdgeInsets.all(AppSizes.p16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Icon(item['icon'] as IconData, color: AppColors.primary.withValues(alpha: 0.4)),
+                      Text(
+                        item['name'] as String,
+                        style: AppTypography.caption.copyWith(fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               if (isLast)

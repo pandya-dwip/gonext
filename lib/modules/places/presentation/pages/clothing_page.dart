@@ -4,6 +4,7 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/components/gn_card.dart';
 import '../../../../shared/components/gn_chip.dart';
+import 'package:go_router/go_router.dart';
 
 /// ClothingPage displays boutique streetwear and vintage collections
 /// featuring a vertical card ratio (4:5 crop) with network lifestyle images.
@@ -26,6 +27,7 @@ class _ClothingPageState extends State<ClothingPage> {
       'rating': 4.3,
       'isWishlist': true,
       'imageUrl': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&auto=format&fit=crop&q=60',
+      'location': 'Linking Road, Bandra West, Mumbai',
     },
     {
       'name': 'Tokyo Streetwear',
@@ -34,6 +36,7 @@ class _ClothingPageState extends State<ClothingPage> {
       'rating': 4.6,
       'isWishlist': false,
       'imageUrl': 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=500&auto=format&fit=crop&q=60',
+      'location': 'Colaba Causeway, South Mumbai',
     },
     {
       'name': 'Vogue Boutique',
@@ -42,6 +45,7 @@ class _ClothingPageState extends State<ClothingPage> {
       'rating': 4.9,
       'isWishlist': true,
       'imageUrl': 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&auto=format&fit=crop&q=60',
+      'location': 'Palladium Mall, Lower Parel, Mumbai',
     },
     {
       'name': 'Retro Thrift',
@@ -50,6 +54,7 @@ class _ClothingPageState extends State<ClothingPage> {
       'rating': 4.1,
       'isWishlist': false,
       'imageUrl': 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=500&auto=format&fit=crop&q=60',
+      'location': 'Hill Road, Bandra West, Mumbai',
     },
   ];
 
@@ -165,6 +170,9 @@ class _ClothingPageState extends State<ClothingPage> {
                         icon: Icons.checkroom_rounded,
                         imageUrl: store['imageUrl'] as String?,
                         imageAspectRatio: 4 / 5, // Slightly taller 4:5 fashion crop
+                        location: store['location'] as String?,
+                        category: store['type'] as String?,
+                        onTap: () => context.push('/clothing-detail/cloth-${index + 1}'),
                         onWishlistTap: () {
                           setState(() {
                             store['isWishlist'] = !(store['isWishlist'] as bool);

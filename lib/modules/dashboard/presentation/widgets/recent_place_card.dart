@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../core/extensions/context_extensions.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/theme/app_typography.dart';
 
-/// RecentPlaceCard renders a place preview for horizontal scrolling lists.
+/// RecentPlaceCard renders a place preview for horizontal scrolling lists with refined visual design.
 class RecentPlaceCard extends StatelessWidget {
   final String name;
   final String category;
@@ -25,12 +26,12 @@ class RecentPlaceCard extends StatelessWidget {
       width: 220,
       margin: const EdgeInsets.only(right: AppSizes.p16),
       decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: AppSizes.borderRadiusCircular16,
-        border: Border.all(color: context.colors.outlineVariant),
-        boxShadow: AppSizes.softShadow,
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(AppSizes.r16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
+        boxShadow: AppSizes.shadowLevel2,
       ),
-      padding: const EdgeInsets.all(AppSizes.p12),
+      padding: const EdgeInsets.all(AppSizes.p16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -39,27 +40,28 @@ class RecentPlaceCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               CircleAvatar(
-                radius: 16,
-                backgroundColor: context.colors.primaryContainer,
+                radius: 18,
+                backgroundColor: AppColors.surfaceFaint,
                 child: Icon(
                   categoryIcon,
-                  color: context.colors.primary,
+                  color: AppColors.primary,
                   size: AppSizes.s16,
                 ),
               ),
               Icon(
                 isWishlist ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
-                color: isWishlist ? context.colors.error : context.colors.onSurfaceVariant,
+                color: isWishlist ? AppColors.error : AppColors.textSecondary,
                 size: AppSizes.s20,
               ),
             ],
           ),
-          AppSizes.gapH12,
+          AppSizes.gapH16,
           Text(
             name,
-            style: context.textTheme.titleMedium?.copyWith(
+            style: AppTypography.bodyEmphasis.copyWith(
               fontWeight: FontWeight.bold,
-              color: context.colors.onSurface,
+              color: AppColors.textPrimary,
+              fontSize: 15,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -67,13 +69,14 @@ class RecentPlaceCard extends StatelessWidget {
           AppSizes.gapH4,
           Text(
             category,
-            style: context.textTheme.bodySmall?.copyWith(
-              color: context.colors.onSurfaceVariant,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w500,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          AppSizes.gapH8,
+          AppSizes.gapH12,
           Row(
             children: [
               const Icon(
@@ -84,9 +87,10 @@ class RecentPlaceCard extends StatelessWidget {
               AppSizes.gapW4,
               Text(
                 rating.toStringAsFixed(1),
-                style: context.textTheme.bodyMedium?.copyWith(
+                style: AppTypography.bodyEmphasis.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: context.colors.onSurface,
+                  color: AppColors.textPrimary,
+                  fontSize: 12,
                 ),
               ),
             ],

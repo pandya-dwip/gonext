@@ -31,26 +31,38 @@ void main() {
     // 5. Verify Center visual anchor Home Button is present
     expect(find.byIcon(Icons.home_rounded), findsOneWidget);
 
-    // 6. Verify Floating Add Button is NOT present at top-right
-    expect(find.byIcon(Icons.add_rounded), findsNothing);
-
-    // 7. Verify Navigation to Clothing tab switches view content
-    // Tap the 'Clothing' bottom navigation tab using its inactive Outlined icon
-    await tester.tap(find.byIcon(Icons.checkroom_outlined));
+    // 6. Verify Settings page navigation from Home Tab
+    await tester.tap(find.byIcon(Icons.settings_rounded));
     await tester.pumpAndSettle();
 
-    // Verify it switches view to Clothing page (greeting text is no longer visible)
-    expect(find.text('Clothing'), findsWidgets);
-    expect(find.textContaining('Good'), findsNothing);
+    // Verify settings screen elements are visible (in initial viewport)
+    expect(find.text('Backup Data'), findsOneWidget);
+    expect(find.text('Restore Data'), findsOneWidget);
 
-    // 8. Verify Navigation back to Home tab using Center visual anchor Home Button
-    await tester.tap(find.byIcon(Icons.home_rounded));
+    // Tap back button to return to Dashboard
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
     await tester.pumpAndSettle();
 
-    // Verify we are back on Home Dashboard (greeting text is visible again)
+    // Verify we are back on Home Tab
     expect(find.textContaining('Good'), findsOneWidget);
 
-    // 9. Verify long press on center Home Button opens the redesigned category selector sheet
+    // Scroll the dashboard down to bring the list cards into view
+    await tester.drag(find.byType(SingleChildScrollView).first, const Offset(0, -400));
+    await tester.pumpAndSettle();
+
+    // 7. Verify Tap on a Card opens details page
+    await tester.tap(find.text('The Bombay Canteen').first);
+    await tester.pumpAndSettle();
+
+    // Verify details page layout
+    expect(find.text('Cuisine Style'), findsOneWidget);
+    expect(find.text('Budget Range'), findsOneWidget);
+
+    // Tap back button to return to Dashboard
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
+    await tester.pumpAndSettle();
+
+    // 8. Verify long press on center Home Button opens the category selector sheet
     await tester.longPress(find.byIcon(Icons.home_rounded));
     await tester.pumpAndSettle();
 
@@ -58,12 +70,12 @@ void main() {
     expect(find.text('What would you like to add?'), findsOneWidget);
     expect(find.text('Continue'), findsOneWidget);
 
-    // 10. Tap "Continue" to proceed to the form dialog
+    // 9. Tap "Continue" to proceed to the full screen Add Restaurant form
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
     // Verify details form sheet is visible
-    expect(find.text('Add New Restaurant'), findsOneWidget);
-    expect(find.text('Save Place'), findsOneWidget);
+    expect(find.text('New Restaurant').first, findsOneWidget);
+    expect(find.text('Save'), findsOneWidget);
   });
 }

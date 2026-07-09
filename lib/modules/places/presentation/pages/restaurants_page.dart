@@ -4,6 +4,7 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/components/gn_card.dart';
 import '../../../../shared/components/gn_chip.dart';
+import 'package:go_router/go_router.dart';
 
 /// RestaurantsPage displays saved dining spots with search, chips filters,
 /// and vertical 4:3 standard cards with network photography.
@@ -26,6 +27,7 @@ class _RestaurantsPageState extends State<RestaurantsPage> {
       'rating': 4.7,
       'isWishlist': false,
       'imageUrl': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&auto=format&fit=crop&q=60',
+      'location': 'Kamala Mills, Lower Parel, Mumbai',
     },
     {
       'name': 'Tulum Café',
@@ -34,6 +36,7 @@ class _RestaurantsPageState extends State<RestaurantsPage> {
       'rating': 4.8,
       'isWishlist': true,
       'imageUrl': 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500&auto=format&fit=crop&q=60',
+      'location': 'Carter Road, Bandra West, Mumbai',
     },
     {
       'name': 'The Green Olive',
@@ -42,6 +45,7 @@ class _RestaurantsPageState extends State<RestaurantsPage> {
       'rating': 4.5,
       'isWishlist': false,
       'imageUrl': 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=500&auto=format&fit=crop&q=60',
+      'location': 'Khar West, Mumbai',
     },
     {
       'name': 'Bella Italia',
@@ -50,6 +54,7 @@ class _RestaurantsPageState extends State<RestaurantsPage> {
       'rating': 4.6,
       'isWishlist': true,
       'imageUrl': 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=500&auto=format&fit=crop&q=60',
+      'location': 'Powai, Mumbai',
     },
   ];
 
@@ -165,6 +170,9 @@ class _RestaurantsPageState extends State<RestaurantsPage> {
                         icon: Icons.restaurant_rounded,
                         imageUrl: rest['imageUrl'] as String?,
                         imageAspectRatio: 4 / 3, // Standard M3 4:3 crop
+                        location: rest['location'] as String?,
+                        category: rest['cuisine'] as String?,
+                        onTap: () => context.push('/restaurant-detail/rest-${index + 1}'),
                         onWishlistTap: () {
                           setState(() {
                             rest['isWishlist'] = !(rest['isWishlist'] as bool);

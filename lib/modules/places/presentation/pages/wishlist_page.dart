@@ -5,6 +5,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../shared/components/gn_card.dart';
 import '../../../../shared/components/gn_chip.dart';
+import 'package:go_router/go_router.dart';
 
 /// WishlistPage displays a motivational count title, toggleable list/map previews,
 /// and list swipe-to-visit animations with premium photo coverage.
@@ -20,6 +21,8 @@ class _WishlistPageState extends State<WishlistPage> {
 
   final List<Map<String, dynamic>> _mockWishlist = [
     {
+      'id': 'rest-2',
+      'type': 'rest',
       'name': 'Tulum Café',
       'category': 'Restaurant',
       'rating': 4.8,
@@ -28,6 +31,8 @@ class _WishlistPageState extends State<WishlistPage> {
       'imageUrl': 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500&auto=format&fit=crop&q=60',
     },
     {
+      'id': 'cloth-1',
+      'type': 'cloth',
       'name': 'Urban Threads',
       'category': 'Clothing Store',
       'rating': 4.2,
@@ -36,6 +41,8 @@ class _WishlistPageState extends State<WishlistPage> {
       'imageUrl': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&auto=format&fit=crop&q=60',
     },
     {
+      'id': 'visit-1',
+      'type': 'visit',
       'name': 'Grand Canyon',
       'category': 'Place to Visit',
       'rating': 4.9,
@@ -44,6 +51,8 @@ class _WishlistPageState extends State<WishlistPage> {
       'imageUrl': 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500&auto=format&fit=crop&q=60',
     },
     {
+      'id': 'visit-3',
+      'type': 'visit',
       'name': 'Central Park NYC',
       'category': 'Place to Visit',
       'rating': 4.7,
@@ -212,6 +221,17 @@ class _WishlistPageState extends State<WishlistPage> {
                 icon: item['icon'] as IconData,
                 imageUrl: item['imageUrl'] as String?,
                 imageAspectRatio: 16 / 10,
+                onTap: () {
+                  final id = item['id'] as String;
+                  final type = item['type'] as String;
+                  if (type == 'rest') {
+                    context.push('/restaurant-detail/$id');
+                  } else if (type == 'cloth') {
+                    context.push('/clothing-detail/$id');
+                  } else {
+                    context.push('/place-detail/$id');
+                  }
+                },
               ),
               AppSizes.gapH8,
               // Footer metadata tag (saved time)

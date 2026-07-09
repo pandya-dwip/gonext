@@ -4,6 +4,7 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/components/gn_card.dart';
 import '../../../../shared/components/gn_chip.dart';
+import 'package:go_router/go_router.dart';
 
 /// VisitsPage displays sightseeing nature and landmarks wishlists
 /// utilizing wide 16:9 crop ratios resembling travel postcards.
@@ -28,6 +29,7 @@ class _VisitsPageState extends State<VisitsPage> {
       'rating': 4.9,
       'isWishlist': true,
       'imageUrl': 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500&auto=format&fit=crop&q=60',
+      'location': 'Arizona, USA',
     },
     {
       'name': 'Taj Mahal Landmark',
@@ -38,6 +40,7 @@ class _VisitsPageState extends State<VisitsPage> {
       'rating': 4.8,
       'isWishlist': false,
       'imageUrl': 'https://images.unsplash.com/photo-1508849789987-4e5333c12b78?w=500&auto=format&fit=crop&q=60',
+      'location': 'Agra, Uttar Pradesh, India',
     },
     {
       'name': 'Central Park NYC',
@@ -48,6 +51,7 @@ class _VisitsPageState extends State<VisitsPage> {
       'rating': 4.7,
       'isWishlist': true,
       'imageUrl': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&q=60',
+      'location': 'New York City, NY, USA',
     },
     {
       'name': 'Tomorrowland Resort',
@@ -57,7 +61,8 @@ class _VisitsPageState extends State<VisitsPage> {
       'seasonIcon': Icons.beach_access_rounded,
       'rating': 4.9,
       'isWishlist': false,
-      'imageUrl': 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=500&auto=format&fit=crop&q=60',
+      'imageUrl': 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500&auto=format&fit=crop&q=60',
+      'location': 'Boom, Flanders, Belgium',
     },
   ];
 
@@ -174,6 +179,9 @@ class _VisitsPageState extends State<VisitsPage> {
                         icon: Icons.travel_explore_rounded,
                         imageUrl: visit['imageUrl'] as String?,
                         imageAspectRatio: 16 / 9, // Wide travel postcard crop
+                        location: visit['location'] as String?,
+                        category: visit['type'] as String?,
+                        onTap: () => context.push('/place-detail/visit-${index + 1}'),
                         onWishlistTap: () {
                           setState(() {
                             visit['isWishlist'] = !(visit['isWishlist'] as bool);

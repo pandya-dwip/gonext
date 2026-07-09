@@ -25,6 +25,8 @@ class GNCard extends StatelessWidget {
   final VoidCallback? onWishlistTap;
   final String? imageUrl;
   final double imageAspectRatio; // For standard card (e.g. 4/3, 4/5, 16/9)
+  final String? location;
+  final String? category;
 
   const GNCard({
     super.key,
@@ -40,6 +42,8 @@ class GNCard extends StatelessWidget {
     this.onWishlistTap,
     this.imageUrl,
     this.imageAspectRatio = 4 / 3,
+    this.location,
+    this.category,
   });
 
   @override
@@ -62,7 +66,8 @@ class GNCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
         borderRadius: AppSizes.borderRadiusCircular24, // radius lg (24dp)
-        boxShadow: AppSizes.shadowLevel1,
+        boxShadow: AppSizes.shadowLevel2, // upgraded to stronger shadow
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -77,6 +82,22 @@ class GNCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   _buildImagePlaceholder(context),
+                  // Dark Vignette scrim overlay at the bottom of the image
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.45),
+                          ],
+                          stops: const [0.7, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
                   // Rating Badge (Top Right)
                   if (rating != null)
                     Positioned(
@@ -85,37 +106,73 @@ class GNCard extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: AppSizes.p8, vertical: AppSizes.p4),
                         decoration: BoxDecoration(
-                          color: AppColors.background.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(AppSizes.r8),
+                          color: AppColors.background.withValues(alpha: 0.95),
+                          borderRadius: BorderRadius.circular(AppSizes.rPill),
+                          boxShadow: AppSizes.shadowLevel1,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star_rounded, color: Colors.amber, size: AppSizes.s16),
+                            const Icon(Icons.star_rounded, color: Colors.amber, size: 14),
                             AppSizes.gapW4,
                             Text(
                               rating!.toStringAsFixed(1),
-                              style: AppTypography.bodyEmphasis.copyWith(fontSize: 12),
+                              style: AppTypography.bodyEmphasis.copyWith(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                  // Wishlist Toggle (Top Left)
+                  // Category Badge (Top Left)
+                  if (category != null || icon != null)
+                    Positioned(
+                      top: AppSizes.p12,
+                      left: AppSizes.p12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+                        decoration: BoxDecoration(
+                          color: AppColors.background.withValues(alpha: 0.95),
+                          borderRadius: BorderRadius.circular(AppSizes.rPill),
+                          boxShadow: AppSizes.shadowLevel1,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (icon != null) ...[
+                              Icon(icon, color: AppColors.primary, size: 14),
+                              const SizedBox(width: 6),
+                            ],
+                            Text(
+                              category ?? '',
+                              style: AppTypography.caption.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  // Wishlist Toggle (Bottom Right - on image card overlay)
                   if (onWishlistTap != null)
                     Positioned(
-                      top: AppSizes.p8,
-                      left: AppSizes.p8,
+                      bottom: AppSizes.p12,
+                      right: AppSizes.p12,
                       child: CircleAvatar(
                         radius: 18,
-                        backgroundColor: AppColors.background.withValues(alpha: 0.9),
+                        backgroundColor: AppColors.background.withValues(alpha: 0.95),
                         child: IconButton(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                           icon: Icon(
                             isWishlist ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
                             color: isWishlist ? AppColors.error : AppColors.textSecondary,
-                            size: AppSizes.s20,
+                            size: 18,
                           ),
                           onPressed: onWishlistTap,
                         ),
@@ -126,13 +183,13 @@ class GNCard extends StatelessWidget {
             ),
             // Text Details
             Padding(
-              padding: const EdgeInsets.all(AppSizes.p16),
+              padding: const EdgeInsets.all(AppSizes.p20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: AppTypography.subtitle.copyWith(color: AppColors.textPrimary),
+                    style: AppTypography.titleLarge.copyWith(fontSize: 18, color: AppColors.textPrimary),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -140,9 +197,29 @@ class GNCard extends StatelessWidget {
                     AppSizes.gapH4,
                     Text(
                       subtitle!,
-                      style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  if (location != null && location!.isNotEmpty) ...[
+                    AppSizes.gapH12,
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_rounded, color: AppColors.textSecondary, size: 14),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            location!,
+                            style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ],
@@ -230,16 +307,17 @@ class GNCard extends StatelessWidget {
     );
   }
 
-  // 3. Compact Card (fixed 160x200dp)
+  // 3. Compact Card (fixed 160x220dp)
   Widget _buildCompactCard(BuildContext context) {
     return Container(
       width: 160,
-      height: 200,
+      height: 220,
       margin: const EdgeInsets.only(right: AppSizes.p16),
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
         borderRadius: AppSizes.borderRadiusCircular16, // radius md (16dp)
-        boxShadow: AppSizes.shadowLevel1,
+        boxShadow: AppSizes.shadowLevel2,
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -254,22 +332,64 @@ class GNCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   _buildImagePlaceholder(context),
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.4),
+                          ],
+                          stops: const [0.7, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
                   if (onWishlistTap != null)
                     Positioned(
                       top: AppSizes.p8,
                       right: AppSizes.p8,
                       child: CircleAvatar(
                         radius: 14,
-                        backgroundColor: AppColors.background.withValues(alpha: 0.9),
+                        backgroundColor: AppColors.background.withValues(alpha: 0.95),
                         child: IconButton(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                           icon: Icon(
                             isWishlist ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
                             color: isWishlist ? AppColors.error : AppColors.textSecondary,
-                            size: AppSizes.s16,
+                            size: 14,
                           ),
                           onPressed: onWishlistTap,
+                        ),
+                      ),
+                    ),
+                  if (rating != null)
+                    Positioned(
+                      bottom: AppSizes.p8,
+                      left: AppSizes.p8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
+                        decoration: BoxDecoration(
+                          color: AppColors.background.withValues(alpha: 0.95),
+                          borderRadius: BorderRadius.circular(AppSizes.r8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star_rounded, color: Colors.amber, size: 10),
+                            const SizedBox(width: 2),
+                            Text(
+                              rating!.toStringAsFixed(1),
+                              style: AppTypography.bodyEmphasis.copyWith(
+                                fontSize: 9, 
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -280,16 +400,17 @@ class GNCard extends StatelessWidget {
             Expanded(
               flex: 4,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSizes.p12, vertical: AppSizes.p8),
+                padding: const EdgeInsets.all(AppSizes.p12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       title,
-                      style: AppTypography.caption.copyWith(
+                      style: AppTypography.bodyEmphasis.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
+                        fontSize: 14,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -300,7 +421,8 @@ class GNCard extends StatelessWidget {
                         subtitle!,
                         style: AppTypography.caption.copyWith(
                           fontSize: 11,
-                          color: AppColors.textSecondary,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -322,6 +444,7 @@ class GNCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceFaint,
         borderRadius: AppSizes.borderRadiusCircular16, // radius md (16dp)
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
       ),
       padding: const EdgeInsets.all(AppSizes.p16),
       child: Column(
