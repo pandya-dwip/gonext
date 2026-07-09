@@ -7,6 +7,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/components/gn_card.dart';
 import '../../../../shared/components/gn_chip.dart';
 import '../../../../shared/components/gn_button.dart';
+import '../../../../shared/components/gn_empty_state.dart';
 import '../../data/models/place_model.dart';
 import '../providers/place_provider.dart';
 
@@ -90,125 +91,24 @@ class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
     );
   }
 
-  void _showFilterOptions(String filterType) {
-    if (filterType == 'All') {
-      ref.read(restaurantCuisineFilterProvider.notifier).state = 'All';
-      ref.read(restaurantBudgetFilterProvider.notifier).state = 'All';
-      ref.read(restaurantVisitedFilterProvider.notifier).state = 'All';
-      ref.read(restaurantRatingFilterProvider.notifier).state = null;
-      return;
-    }
-
-    if (filterType == 'Cuisine') {
-      // Extract unique cuisines from database
-      final allPlaces = ref.read(placesListProvider).value ?? [];
-      final cuisines = allPlaces
-          .where((p) => p.type == 'restaurant')
-          .map((p) => p.category)
-          .toSet()
-          .toList();
-      cuisines.sort();
-
-      showModalBottomSheet(
-        context: context,
-        builder: (context) {
-          return SafeArea(
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                ListTile(
-                  title: const Text('All Cuisines'),
-                  onTap: () {
-                    ref.read(restaurantCuisineFilterProvider.notifier).state = 'All';
-                    Navigator.pop(context);
-                  },
-                ),
-                ...cuisines.map((c) => ListTile(
-                  title: Text(c),
-                  onTap: () {
-                    ref.read(restaurantCuisineFilterProvider.notifier).state = c;
-                    Navigator.pop(context);
-                  },
-                )),
-              ],
-            ),
-          );
-        },
-      );
-    } else if (filterType == 'Budget') {
-      showModalBottomSheet(
-        context: context,
-        builder: (context) {
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  title: const Text('All Budgets'),
-                  onTap: () {
-                    ref.read(restaurantBudgetFilterProvider.notifier).state = 'All';
-                    Navigator.pop(context);
-                  },
-                ),
-                ...['₹', '₹₹', '₹₹₹'].map((b) => ListTile(
-                  title: Text(b == '₹' ? '₹ (Inexpensive)' : b == '₹₹' ? '₹₹ (Moderate)' : '₹₹₹ (Expensive)'),
-                  onTap: () {
-                    ref.read(restaurantBudgetFilterProvider.notifier).state = b;
-                    Navigator.pop(context);
-                  },
-                )),
-              ],
-            ),
-          );
-        },
-      );
-    } else if (filterType == 'Rating') {
-      showModalBottomSheet(
-        context: context,
-        builder: (context) {
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  title: const Text('Any Rating'),
-                  onTap: () {
-                    ref.read(restaurantRatingFilterProvider.notifier).state = null;
-                    Navigator.pop(context);
-                  },
-                ),
-                ...[3.0, 4.0, 4.5].map((r) => ListTile(
-                  title: Text('$r+ Stars'),
-                  onTap: () {
-                    ref.read(restaurantRatingFilterProvider.notifier).state = r;
-                    Navigator.pop(context);
-                  },
-                )),
-              ],
-            ),
-          );
-        },
-      );
-    } else if (filterType == 'Wishlist-only') {
-      final current = ref.read(restaurantVisitedFilterProvider);
-      ref.read(restaurantVisitedFilterProvider.notifier).state =
-          current == 'Wishlist-only' ? 'All' : 'Wishlist-only';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final restaurants = ref.watch(filteredRestaurantsProvider);
+    final allPlaces = ref.watch(placesListProvider).value ?? [];
+    final rawRestaurantsEmpty = allPlaces.where((p) => p.type == 'restaurant').isEmpty;
 
-    final activeCuisine = ref.watch(restaurantCuisineFilterProvider);
-    final activeBudget = ref.watch(restaurantBudgetFilterProvider);
+    final activeCuisines = ref.watch(restaurantCuisineFilterProvider);
+    final activeBudgets = ref.watch(restaurantBudgetFilterProvider);
     final activeVisited = ref.watch(restaurantVisitedFilterProvider);
-    final activeRating = ref.watch(restaurantRatingFilterProvider);
+    final activeWishlist = ref.watch(restaurantWishlistFilterProvider);
 
-    final hasActiveFilter = activeCuisine != 'All' ||
-        activeBudget != 'All' ||
-        activeVisited == 'Wishlist-only' ||
-        activeRating != null;
+    final availableCuisines = ref.watch(availableRestaurantCuisinesProvider);
+    final availableBudgets = ref.watch(availableRestaurantBudgetsProvider);
+
+    final hasActiveFilter = activeCuisines.isNotEmpty ||
+        activeBudgets.isNotEmpty ||
+        activeVisited.isNotEmpty ||
+        activeWishlist.isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -285,15 +185,73 @@ class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
-                  _buildFilterChip('All', !hasActiveFilter),
-                  AppSizes.gapW8,
-                  _buildFilterChip('Cuisine', activeCuisine != 'All', suffixText: activeCuisine != 'All' ? activeCuisine : null),
-                  AppSizes.gapW8,
-                  _buildFilterChip('Budget', activeBudget != 'All', suffixText: activeBudget != 'All' ? activeBudget : null),
-                  AppSizes.gapW8,
-                  _buildFilterChip('Rating', activeRating != null, suffixText: activeRating != null ? '${activeRating}+' : null),
-                  AppSizes.gapW8,
-                  _buildFilterChip('Wishlist-only', activeVisited == 'Wishlist-only'),
+                  if (hasActiveFilter) ...[
+                    GNChip(
+                      label: 'Clear Filters',
+                      variant: GNChipVariant.filter,
+                      isSelected: false,
+                      leadingIcon: Icons.clear_all_rounded,
+                      onTap: () {
+                        ref.read(restaurantCuisineFilterProvider.notifier).clear();
+                        ref.read(restaurantBudgetFilterProvider.notifier).clear();
+                        ref.read(restaurantVisitedFilterProvider.notifier).clear();
+                        ref.read(restaurantWishlistFilterProvider.notifier).clear();
+                      },
+                    ),
+                    AppSizes.gapW8,
+                  ],
+                  // Visited status filters
+                  ...['Visited', 'Not Visited'].map((status) {
+                    final isSelected = activeVisited.contains(status);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: GNChip(
+                        label: status,
+                        variant: GNChipVariant.filter,
+                        isSelected: isSelected,
+                        onTap: () => ref.read(restaurantVisitedFilterProvider.notifier).toggle(status),
+                      ),
+                    );
+                  }),
+                  // Wishlist status filters
+                  ...['Wishlist', 'Not Wishlist'].map((status) {
+                    final isSelected = activeWishlist.contains(status);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: GNChip(
+                        label: status,
+                        variant: GNChipVariant.filter,
+                        isSelected: isSelected,
+                        onTap: () => ref.read(restaurantWishlistFilterProvider.notifier).toggle(status),
+                      ),
+                    );
+                  }),
+                  // Budgets (only existing)
+                  ...availableBudgets.map((b) {
+                    final isSelected = activeBudgets.contains(b);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: GNChip(
+                        label: b,
+                        variant: GNChipVariant.filter,
+                        isSelected: isSelected,
+                        onTap: () => ref.read(restaurantBudgetFilterProvider.notifier).toggle(b),
+                      ),
+                    );
+                  }),
+                  // Cuisines/Categories (only existing)
+                  ...availableCuisines.map((c) {
+                    final isSelected = activeCuisines.contains(c);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: GNChip(
+                        label: c,
+                        variant: GNChipVariant.filter,
+                        isSelected: isSelected,
+                        onTap: () => ref.read(restaurantCuisineFilterProvider.notifier).toggle(c),
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
@@ -301,25 +259,36 @@ class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
 
             // Standard 4:3 card list scroll OR empty state
             Expanded(
-              child: restaurants.isEmpty
+              child: rawRestaurantsEmpty
                   ? GNEmptyState(
                       title: 'No Restaurants Yet',
-                      subtitle: 'Save dining spots, bistros, and cafés to your dashboard.',
-                      buttonLabel: 'Add Restaurant',
+                      description: 'Save dining spots, bistros, and cafés to your dashboard.',
+                      actionLabel: 'Add Restaurant',
                       icon: Icons.restaurant_rounded,
-                      onButtonPressed: () => context.push('/add-restaurant'),
+                      onActionPressed: () => context.push('/add-restaurant'),
                     )
-                  : ListView.separated(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(AppSizes.p16, 0, AppSizes.p16, 120.0),
-                      itemCount: restaurants.length,
-                      separatorBuilder: (context, index) => AppSizes.gapH24,
-                      itemBuilder: (context, index) {
-                        final rest = restaurants[index];
+                  : (restaurants.isEmpty
+                      ? GNEmptyState(
+                          title: 'No places match your filters.',
+                          description: 'Try removing some filters.',
+                          actionLabel: 'Clear Filters',
+                          icon: Icons.filter_list_off_rounded,
+                          onActionPressed: () {
+                            ref.read(restaurantCuisineFilterProvider.notifier).clear();
+                            ref.read(restaurantBudgetFilterProvider.notifier).clear();
+                            ref.read(restaurantVisitedFilterProvider.notifier).clear();
+                            ref.read(restaurantWishlistFilterProvider.notifier).clear();
+                          },
+                        )
+                      : ListView.separated(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(AppSizes.p16, 0, AppSizes.p16, 120.0),
+                          itemCount: restaurants.length,
+                          separatorBuilder: (context, index) => AppSizes.gapH24,
+                          itemBuilder: (context, index) {
+                            final rest = restaurants[index];
 
-                        return Column(
-                          children: [
-                            GNCard(
+                            return GNCard(
                               variant: GNCardVariant.standard,
                               title: rest.name,
                               subtitle: '${rest.category} • ${rest.budget}',
@@ -355,98 +324,9 @@ class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
                                 );
                                 await ref.read(placesListProvider.notifier).updatePlace(updated);
                               },
-                            ),
-                            AppSizes.gapH8,
-                            // Inline tags row inside card footer bounds
-                            Row(
-                              children: [
-                                GNChip(
-                                  label: rest.category,
-                                  variant: GNChipVariant.status,
-                                  statusTone: GNStatusTone.info,
-                                ),
-                                AppSizes.gapW8,
-                                GNChip(
-                                  label: rest.budget,
-                                  variant: GNChipVariant.status,
-                                  statusTone: GNStatusTone.success,
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, bool isSelected, {String? suffixText}) {
-    final displayLabel = suffixText != null ? '$label ($suffixText)' : label;
-    return GNChip(
-      label: displayLabel,
-      variant: GNChipVariant.filter,
-      isSelected: isSelected,
-      onTap: () => _showFilterOptions(label),
-    );
-  }
-}
-
-class GNEmptyState extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String buttonLabel;
-  final VoidCallback onButtonPressed;
-  final IconData icon;
-
-  const GNEmptyState({
-    super.key,
-    required this.title,
-    required this.subtitle,
-    required this.buttonLabel,
-    required this.onButtonPressed,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSizes.p24, vertical: AppSizes.p32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppSizes.p24),
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceFaint,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 64, color: AppColors.primary.withValues(alpha: 0.8)),
-            ),
-            AppSizes.gapH24,
-            Text(
-              title,
-              style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            AppSizes.gapH8,
-            Text(
-              subtitle,
-              style: AppTypography.caption,
-              textAlign: TextAlign.center,
-            ),
-            AppSizes.gapH24,
-            SizedBox(
-              width: 200,
-              child: GNButton(
-                label: buttonLabel,
-                onPressed: onButtonPressed,
-                variant: GNButtonVariant.primary,
-              ),
+                            );
+                          },
+                        )),
             ),
           ],
         ),

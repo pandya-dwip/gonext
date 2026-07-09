@@ -13,7 +13,7 @@ import '../../../../shared/components/gn_button.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../providers/place_provider.dart';
 import '../../data/models/place_model.dart';
-import 'restaurants_page.dart'; // Import GNEmptyState
+import '../../../../shared/components/gn_empty_state.dart';
 
 /// WishlistPage displays a motivational count title, toggleable list/map previews,
 /// and list swipe-to-visit animations with premium photo coverage.
@@ -185,10 +185,10 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
     if (wishlist.isEmpty) {
       return const GNEmptyState(
         title: 'Your Wishlist is Empty',
-        subtitle: 'Add places and restaurants to keep them in mind for later.',
-        buttonLabel: 'Explore Dashboard',
+        description: 'Add places and restaurants to keep them in mind for later.',
+        actionLabel: 'Explore Dashboard',
         icon: Icons.favorite_border_rounded,
-        onButtonPressed: _noOp, // Handled inside GoRouter tab switch
+        onActionPressed: _noOp, // Handled inside GoRouter tab switch
       );
     }
 
@@ -199,6 +199,16 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
       separatorBuilder: (context, index) => AppSizes.gapH24,
       itemBuilder: (context, index) {
         final item = wishlist[index];
+
+        final aspect = item.type == 'restaurant'
+            ? 4 / 3
+            : item.type == 'clothing'
+                ? 4 / 5
+                : 16 / 9;
+
+        final sub = item.type == 'visit'
+            ? '${item.category} • ${item.entryFee ?? 'Free'}'
+            : '${item.category} • ${item.budget}';
 
         return Dismissible(
           key: Key(item.id),
@@ -258,13 +268,15 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
               GNCard(
                 variant: GNCardVariant.standard,
                 title: item.name,
-                subtitle: '${_getTypeLabel(item.type)} • ${item.category}',
+                subtitle: sub,
                 rating: item.rating,
                 isWishlist: true,
                 icon: _getTypeIcon(item.type),
                 imageUrl: item.imageUrl,
                 imageType: item.imageType,
-                imageAspectRatio: 16 / 10,
+                imageAspectRatio: aspect,
+                location: item.location,
+                category: item.category,
                 onTap: () => _navigateToDetail(context, item),
                 onWishlistTap: () async {
                   final updated = PlaceModel(
@@ -290,15 +302,9 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
                   await ref.read(placesListProvider.notifier).updatePlace(updated);
                 },
               ),
-              AppSizes.gapH8,
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  GNChip(
-                    label: _getTypeLabel(item.type),
-                    variant: GNChipVariant.status,
-                    statusTone: GNStatusTone.info,
-                  ),
                   Text(
                     'Added on ${item.dateAdded}',
                     style: AppTypography.caption.copyWith(

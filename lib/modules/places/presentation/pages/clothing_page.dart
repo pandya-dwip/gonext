@@ -7,9 +7,9 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/components/gn_card.dart';
 import '../../../../shared/components/gn_chip.dart';
 import '../../../../shared/components/gn_button.dart';
+import '../../../../shared/components/gn_empty_state.dart';
 import '../../data/models/place_model.dart';
 import '../providers/place_provider.dart';
-import 'restaurants_page.dart'; // Import GNEmptyState
 
 /// ClothingPage displays boutique streetwear and vintage collections
 /// featuring a vertical card ratio (4:5 crop) with local/network/asset lifestyle images.
@@ -90,94 +90,24 @@ class _ClothingPageState extends ConsumerState<ClothingPage> {
     );
   }
 
-  void _showFilterOptions(String filterType) {
-    if (filterType == 'All') {
-      ref.read(clothingTypeFilterProvider.notifier).state = 'All';
-      ref.read(clothingBudgetFilterProvider.notifier).state = 'All';
-      ref.read(clothingVisitedFilterProvider.notifier).state = 'All';
-      return;
-    }
-
-    if (filterType == 'Store Type') {
-      final allPlaces = ref.read(placesListProvider).value ?? [];
-      final types = allPlaces
-          .where((p) => p.type == 'clothing')
-          .map((p) => p.category)
-          .toSet()
-          .toList();
-      types.sort();
-
-      showModalBottomSheet(
-        context: context,
-        builder: (context) {
-          return SafeArea(
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                ListTile(
-                  title: const Text('All Store Types'),
-                  onTap: () {
-                    ref.read(clothingTypeFilterProvider.notifier).state = 'All';
-                    Navigator.pop(context);
-                  },
-                ),
-                ...types.map((t) => ListTile(
-                  title: Text(t),
-                  onTap: () {
-                    ref.read(clothingTypeFilterProvider.notifier).state = t;
-                    Navigator.pop(context);
-                  },
-                )),
-              ],
-            ),
-          );
-        },
-      );
-    } else if (filterType == 'Budget') {
-      showModalBottomSheet(
-        context: context,
-        builder: (context) {
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  title: const Text('All Budgets'),
-                  onTap: () {
-                    ref.read(clothingBudgetFilterProvider.notifier).state = 'All';
-                    Navigator.pop(context);
-                  },
-                ),
-                ...['Low Range', 'Mid Range', 'High Range', 'Luxury/Premium'].map((b) => ListTile(
-                  title: Text(b),
-                  onTap: () {
-                    ref.read(clothingBudgetFilterProvider.notifier).state = b;
-                    Navigator.pop(context);
-                  },
-                )),
-              ],
-            ),
-          );
-        },
-      );
-    } else if (filterType == 'Wishlist-only') {
-      final current = ref.read(clothingVisitedFilterProvider);
-      ref.read(clothingVisitedFilterProvider.notifier).state =
-          current == 'Wishlist-only' ? 'All' : 'Wishlist-only';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final boutiques = ref.watch(filteredClothingProvider);
+    final allPlaces = ref.watch(placesListProvider).value ?? [];
+    final rawClothingEmpty = allPlaces.where((p) => p.type == 'clothing').isEmpty;
 
-    final activeType = ref.watch(clothingTypeFilterProvider);
-    final activeBudget = ref.watch(clothingBudgetFilterProvider);
+    final activeTypes = ref.watch(clothingTypeFilterProvider);
+    final activeBudgets = ref.watch(clothingBudgetFilterProvider);
     final activeVisited = ref.watch(clothingVisitedFilterProvider);
+    final activeWishlist = ref.watch(clothingWishlistFilterProvider);
 
-    final hasActiveFilter = activeType != 'All' ||
-        activeBudget != 'All' ||
-        activeVisited == 'Wishlist-only';
+    final availableTypes = ref.watch(availableClothingTypesProvider);
+    final availableBudgets = ref.watch(availableClothingBudgetsProvider);
+
+    final hasActiveFilter = activeTypes.isNotEmpty ||
+        activeBudgets.isNotEmpty ||
+        activeVisited.isNotEmpty ||
+        activeWishlist.isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -254,13 +184,73 @@ class _ClothingPageState extends ConsumerState<ClothingPage> {
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
-                  _buildFilterChip('All', !hasActiveFilter),
-                  AppSizes.gapW8,
-                  _buildFilterChip('Store Type', activeType != 'All', suffixText: activeType != 'All' ? activeType : null),
-                  AppSizes.gapW8,
-                  _buildFilterChip('Budget', activeBudget != 'All', suffixText: activeBudget != 'All' ? activeBudget : null),
-                  AppSizes.gapW8,
-                  _buildFilterChip('Wishlist-only', activeVisited == 'Wishlist-only'),
+                  if (hasActiveFilter) ...[
+                    GNChip(
+                      label: 'Clear Filters',
+                      variant: GNChipVariant.filter,
+                      isSelected: false,
+                      leadingIcon: Icons.clear_all_rounded,
+                      onTap: () {
+                        ref.read(clothingTypeFilterProvider.notifier).clear();
+                        ref.read(clothingBudgetFilterProvider.notifier).clear();
+                        ref.read(clothingVisitedFilterProvider.notifier).clear();
+                        ref.read(clothingWishlistFilterProvider.notifier).clear();
+                      },
+                    ),
+                    AppSizes.gapW8,
+                  ],
+                  // Visited status filters
+                  ...['Visited', 'Not Visited'].map((status) {
+                    final isSelected = activeVisited.contains(status);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: GNChip(
+                        label: status,
+                        variant: GNChipVariant.filter,
+                        isSelected: isSelected,
+                        onTap: () => ref.read(clothingVisitedFilterProvider.notifier).toggle(status),
+                      ),
+                    );
+                  }),
+                  // Wishlist status filters
+                  ...['Wishlist', 'Not Wishlist'].map((status) {
+                    final isSelected = activeWishlist.contains(status);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: GNChip(
+                        label: status,
+                        variant: GNChipVariant.filter,
+                        isSelected: isSelected,
+                        onTap: () => ref.read(clothingWishlistFilterProvider.notifier).toggle(status),
+                      ),
+                    );
+                  }),
+                  // Budgets (only existing)
+                  ...availableBudgets.map((b) {
+                    final isSelected = activeBudgets.contains(b);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: GNChip(
+                        label: b,
+                        variant: GNChipVariant.filter,
+                        isSelected: isSelected,
+                        onTap: () => ref.read(clothingBudgetFilterProvider.notifier).toggle(b),
+                      ),
+                    );
+                  }),
+                  // Store Types (only existing)
+                  ...availableTypes.map((t) {
+                    final isSelected = activeTypes.contains(t);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: GNChip(
+                        label: t,
+                        variant: GNChipVariant.filter,
+                        isSelected: isSelected,
+                        onTap: () => ref.read(clothingTypeFilterProvider.notifier).toggle(t),
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
@@ -268,25 +258,36 @@ class _ClothingPageState extends ConsumerState<ClothingPage> {
 
             // 4:5 Card Grid List OR Empty State
             Expanded(
-              child: boutiques.isEmpty
+              child: rawClothingEmpty
                   ? GNEmptyState(
                       title: 'No Clothing Stores Yet',
-                      subtitle: 'Save boutiques, streetwear hubs, and fashion ateliers.',
-                      buttonLabel: 'Add Clothing Store',
+                      description: 'Save boutiques, streetwear hubs, and fashion ateliers.',
+                      actionLabel: 'Add Clothing Store',
                       icon: Icons.checkroom_rounded,
-                      onButtonPressed: () => context.push('/add-clothing'),
+                      onActionPressed: () => context.push('/add-clothing'),
                     )
-                  : ListView.separated(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(AppSizes.p16, 0, AppSizes.p16, 120.0),
-                      itemCount: boutiques.length,
-                      separatorBuilder: (context, index) => AppSizes.gapH24,
-                      itemBuilder: (context, index) {
-                        final store = boutiques[index];
+                  : (boutiques.isEmpty
+                      ? GNEmptyState(
+                          title: 'No places match your filters.',
+                          description: 'Try removing some filters.',
+                          actionLabel: 'Clear Filters',
+                          icon: Icons.filter_list_off_rounded,
+                          onActionPressed: () {
+                            ref.read(clothingTypeFilterProvider.notifier).clear();
+                            ref.read(clothingBudgetFilterProvider.notifier).clear();
+                            ref.read(clothingVisitedFilterProvider.notifier).clear();
+                            ref.read(clothingWishlistFilterProvider.notifier).clear();
+                          },
+                        )
+                      : ListView.separated(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(AppSizes.p16, 0, AppSizes.p16, 120.0),
+                          itemCount: boutiques.length,
+                          separatorBuilder: (context, index) => AppSizes.gapH24,
+                          itemBuilder: (context, index) {
+                            final store = boutiques[index];
 
-                        return Column(
-                          children: [
-                            GNCard(
+                            return GNCard(
                               variant: GNCardVariant.standard,
                               title: store.name,
                               subtitle: '${store.category} • ${store.budget}',
@@ -322,41 +323,13 @@ class _ClothingPageState extends ConsumerState<ClothingPage> {
                                 );
                                 await ref.read(placesListProvider.notifier).updatePlace(updated);
                               },
-                            ),
-                            AppSizes.gapH8,
-                            Row(
-                              children: [
-                                GNChip(
-                                  label: store.category,
-                                  variant: GNChipVariant.status,
-                                  statusTone: GNStatusTone.info,
-                                ),
-                                AppSizes.gapW8,
-                                GNChip(
-                                  label: store.budget,
-                                  variant: GNChipVariant.status,
-                                  statusTone: GNStatusTone.success,
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+                            );
+                          },
+                        )),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, bool isSelected, {String? suffixText}) {
-    final displayLabel = suffixText != null ? '$label ($suffixText)' : label;
-    return GNChip(
-      label: displayLabel,
-      variant: GNChipVariant.filter,
-      isSelected: isSelected,
-      onTap: () => _showFilterOptions(label),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -162,12 +163,6 @@ class RestaurantDetailPage extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            GNChip(
-                              label: place.category,
-                              variant: GNChipVariant.status,
-                              statusTone: GNStatusTone.info,
-                            ),
-                            AppSizes.gapH8,
                             Text(
                               place.name,
                               style: AppTypography.display.copyWith(
@@ -193,6 +188,7 @@ class RestaurantDetailPage extends ConsumerWidget {
                       children: [
                         // Status Row
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -214,12 +210,21 @@ class RestaurantDetailPage extends ConsumerWidget {
                                 ],
                               ),
                             ),
-                            AppSizes.gapW12,
-                            GNChip(
-                              label: place.isVisited ? 'Visited' : 'Wishlist',
-                              variant: GNChipVariant.status,
-                              statusTone: place.isVisited ? GNStatusTone.success : GNStatusTone.info,
-                              leadingIcon: place.isVisited ? Icons.verified_rounded : Icons.bookmark_rounded,
+                            Row(
+                              children: [
+                                GNChip(
+                                  label: place.category,
+                                  variant: GNChipVariant.status,
+                                  statusTone: GNStatusTone.info,
+                                ),
+                                AppSizes.gapW8,
+                                GNChip(
+                                  label: place.isVisited ? 'Visited' : 'Wishlist',
+                                  variant: GNChipVariant.status,
+                                  statusTone: place.isVisited ? GNStatusTone.success : GNStatusTone.warning,
+                                  leadingIcon: place.isVisited ? Icons.verified_rounded : Icons.bookmark_rounded,
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -248,10 +253,11 @@ class RestaurantDetailPage extends ConsumerWidget {
                           value: place.budget,
                         ),
                         AppSizes.gapH12,
-                        _buildInfoCard(
-                          icon: Icons.location_on_rounded,
-                          title: 'Location / Address',
-                          value: place.location,
+                        _buildLocationCard(
+                          context,
+                          address: place.location,
+                          latitude: place.latitude,
+                          longitude: place.longitude,
                         ),
                         AppSizes.gapH32,
 
@@ -372,6 +378,106 @@ class RestaurantDetailPage extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _copyToClipboard(BuildContext context, String text, String message) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Widget _buildLocationCard(
+    BuildContext context, {
+    required String address,
+    required double? latitude,
+    required double? longitude,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.p16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceFaint,
+        borderRadius: BorderRadius.circular(AppSizes.r16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 22),
+              AppSizes.gapW16,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Location / Address', style: AppTypography.caption),
+                    const SizedBox(height: 4),
+                    Text(
+                      address,
+                      style: AppTypography.bodyEmphasis.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24, color: AppColors.border),
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            children: [
+              TextButton.icon(
+                onPressed: () => _copyToClipboard(
+                  context,
+                  address,
+                  'Address copied to clipboard',
+                ),
+                icon: const Icon(Icons.copy_rounded, size: 14, color: AppColors.primary),
+                label: Text(
+                  'Copy Address',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+              if (latitude != null && longitude != null) ...[
+                TextButton.icon(
+                  onPressed: () => _copyToClipboard(
+                    context,
+                    '$latitude,$longitude',
+                    'Coordinates copied to clipboard',
+                  ),
+                  icon: const Icon(Icons.gps_fixed_rounded, size: 14, color: AppColors.primary),
+                  label: Text(
+                    'Copy Coordinates',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ),

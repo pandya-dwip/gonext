@@ -73,30 +73,36 @@ class PlaceSortOptionNotifier extends Notifier<PlaceSortOption> {
 }
 final placeSortOptionProvider = NotifierProvider<PlaceSortOptionNotifier, PlaceSortOption>(PlaceSortOptionNotifier.new);
 
+// SetFilterNotifier provides a generic set-based filter state notifier
+class SetFilterNotifier extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => {};
+
+  void toggle(String val) {
+    if (state.contains(val)) {
+      state = state.difference({val});
+    } else {
+      state = state.union({val});
+    }
+  }
+
+  void clear() {
+    state = {};
+  }
+}
+
 // Restaurants Filter Notifiers
-class RestaurantCuisineFilterNotifier extends Notifier<String> {
-  @override
-  String build() => 'All';
+class RestaurantCuisineFilterNotifier extends SetFilterNotifier {}
+final restaurantCuisineFilterProvider = NotifierProvider<RestaurantCuisineFilterNotifier, Set<String>>(RestaurantCuisineFilterNotifier.new);
 
-  set state(String val) => super.state = val;
-}
-final restaurantCuisineFilterProvider = NotifierProvider<RestaurantCuisineFilterNotifier, String>(RestaurantCuisineFilterNotifier.new);
+class RestaurantBudgetFilterNotifier extends SetFilterNotifier {}
+final restaurantBudgetFilterProvider = NotifierProvider<RestaurantBudgetFilterNotifier, Set<String>>(RestaurantBudgetFilterNotifier.new);
 
-class RestaurantBudgetFilterNotifier extends Notifier<String> {
-  @override
-  String build() => 'All';
+class RestaurantVisitedFilterNotifier extends SetFilterNotifier {}
+final restaurantVisitedFilterProvider = NotifierProvider<RestaurantVisitedFilterNotifier, Set<String>>(RestaurantVisitedFilterNotifier.new);
 
-  set state(String val) => super.state = val;
-}
-final restaurantBudgetFilterProvider = NotifierProvider<RestaurantBudgetFilterNotifier, String>(RestaurantBudgetFilterNotifier.new);
-
-class RestaurantVisitedFilterNotifier extends Notifier<String> {
-  @override
-  String build() => 'All';
-
-  set state(String val) => super.state = val;
-}
-final restaurantVisitedFilterProvider = NotifierProvider<RestaurantVisitedFilterNotifier, String>(RestaurantVisitedFilterNotifier.new);
+class RestaurantWishlistFilterNotifier extends SetFilterNotifier {}
+final restaurantWishlistFilterProvider = NotifierProvider<RestaurantWishlistFilterNotifier, Set<String>>(RestaurantWishlistFilterNotifier.new);
 
 class RestaurantRatingFilterNotifier extends Notifier<double?> {
   @override
@@ -107,54 +113,167 @@ class RestaurantRatingFilterNotifier extends Notifier<double?> {
 final restaurantRatingFilterProvider = NotifierProvider<RestaurantRatingFilterNotifier, double?>(RestaurantRatingFilterNotifier.new);
 
 // Clothing Filter Notifiers
-class ClothingTypeFilterNotifier extends Notifier<String> {
-  @override
-  String build() => 'All';
+class ClothingTypeFilterNotifier extends SetFilterNotifier {}
+final clothingTypeFilterProvider = NotifierProvider<ClothingTypeFilterNotifier, Set<String>>(ClothingTypeFilterNotifier.new);
 
-  set state(String val) => super.state = val;
-}
-final clothingTypeFilterProvider = NotifierProvider<ClothingTypeFilterNotifier, String>(ClothingTypeFilterNotifier.new);
+class ClothingBudgetFilterNotifier extends SetFilterNotifier {}
+final clothingBudgetFilterProvider = NotifierProvider<ClothingBudgetFilterNotifier, Set<String>>(ClothingBudgetFilterNotifier.new);
 
-class ClothingBudgetFilterNotifier extends Notifier<String> {
-  @override
-  String build() => 'All';
+class ClothingVisitedFilterNotifier extends SetFilterNotifier {}
+final clothingVisitedFilterProvider = NotifierProvider<ClothingVisitedFilterNotifier, Set<String>>(ClothingVisitedFilterNotifier.new);
 
-  set state(String val) => super.state = val;
-}
-final clothingBudgetFilterProvider = NotifierProvider<ClothingBudgetFilterNotifier, String>(ClothingBudgetFilterNotifier.new);
-
-class ClothingVisitedFilterNotifier extends Notifier<String> {
-  @override
-  String build() => 'All';
-
-  set state(String val) => super.state = val;
-}
-final clothingVisitedFilterProvider = NotifierProvider<ClothingVisitedFilterNotifier, String>(ClothingVisitedFilterNotifier.new);
+class ClothingWishlistFilterNotifier extends SetFilterNotifier {}
+final clothingWishlistFilterProvider = NotifierProvider<ClothingWishlistFilterNotifier, Set<String>>(ClothingWishlistFilterNotifier.new);
 
 // Visits Filter Notifiers
-class VisitCategoryFilterNotifier extends Notifier<String> {
+class VisitCategoryFilterNotifier extends SetFilterNotifier {}
+final visitCategoryFilterProvider = NotifierProvider<VisitCategoryFilterNotifier, Set<String>>(VisitCategoryFilterNotifier.new);
+
+class VisitBudgetFilterNotifier extends SetFilterNotifier {}
+final visitBudgetFilterProvider = NotifierProvider<VisitBudgetFilterNotifier, Set<String>>(VisitBudgetFilterNotifier.new);
+
+class VisitVisitedFilterNotifier extends SetFilterNotifier {}
+final visitVisitedFilterProvider = NotifierProvider<VisitVisitedFilterNotifier, Set<String>>(VisitVisitedFilterNotifier.new);
+
+class VisitWishlistFilterNotifier extends SetFilterNotifier {}
+final visitWishlistFilterProvider = NotifierProvider<VisitWishlistFilterNotifier, Set<String>>(VisitWishlistFilterNotifier.new);
+
+// Home Search Provider
+class HomeSearchQueryNotifier extends Notifier<String> {
   @override
-  String build() => 'All';
+  String build() => '';
 
   set state(String val) => super.state = val;
 }
-final visitCategoryFilterProvider = NotifierProvider<VisitCategoryFilterNotifier, String>(VisitCategoryFilterNotifier.new);
+final homeSearchQueryProvider = NotifierProvider<HomeSearchQueryNotifier, String>(HomeSearchQueryNotifier.new);
 
-class VisitPriceFilterNotifier extends Notifier<String> {
-  @override
-  String build() => 'All';
+// Grouped Search Results for Dashboard
+class GroupedSearchResults {
+  final List<PlaceModel> restaurants;
+  final List<PlaceModel> clothing;
+  final List<PlaceModel> visits;
 
-  set state(String val) => super.state = val;
+  GroupedSearchResults({
+    required this.restaurants,
+    required this.clothing,
+    required this.visits,
+  });
+
+  bool get isEmpty => restaurants.isEmpty && clothing.isEmpty && visits.isEmpty;
 }
-final visitPriceFilterProvider = NotifierProvider<VisitPriceFilterNotifier, String>(VisitPriceFilterNotifier.new);
 
-class VisitVisitedFilterNotifier extends Notifier<String> {
-  @override
-  String build() => 'All';
+final groupedSearchResultsProvider = Provider<GroupedSearchResults>((ref) {
+  final query = ref.watch(homeSearchQueryProvider);
+  if (query.isEmpty) {
+    return GroupedSearchResults(restaurants: [], clothing: [], visits: []);
+  }
 
-  set state(String val) => super.state = val;
-}
-final visitVisitedFilterProvider = NotifierProvider<VisitVisitedFilterNotifier, String>(VisitVisitedFilterNotifier.new);
+  final placesAsync = ref.watch(placesListProvider);
+  return placesAsync.maybeWhen(
+    data: (places) {
+      final restaurants = places
+          .where((p) => p.type == 'restaurant' && _matchesSearch(p, query))
+          .toList();
+      final clothing = places
+          .where((p) => p.type == 'clothing' && _matchesSearch(p, query))
+          .toList();
+      final visits = places
+          .where((p) => p.type == 'visit' && _matchesSearch(p, query))
+          .toList();
+      return GroupedSearchResults(
+        restaurants: restaurants,
+        clothing: clothing,
+        visits: visits,
+      );
+    },
+    orElse: () => GroupedSearchResults(restaurants: [], clothing: [], visits: []),
+  );
+});
+
+// Dynamic available option providers generated from stored data
+final availableRestaurantCuisinesProvider = Provider<List<String>>((ref) {
+  final placesAsync = ref.watch(placesListProvider);
+  return placesAsync.maybeWhen(
+    data: (places) => places
+        .where((p) => p.type == 'restaurant')
+        .map((p) => p.category)
+        .where((c) => c.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort(),
+    orElse: () => [],
+  );
+});
+
+final availableRestaurantBudgetsProvider = Provider<List<String>>((ref) {
+  final placesAsync = ref.watch(placesListProvider);
+  return placesAsync.maybeWhen(
+    data: (places) => places
+        .where((p) => p.type == 'restaurant')
+        .map((p) => p.budget)
+        .where((b) => b.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort(),
+    orElse: () => [],
+  );
+});
+
+final availableClothingTypesProvider = Provider<List<String>>((ref) {
+  final placesAsync = ref.watch(placesListProvider);
+  return placesAsync.maybeWhen(
+    data: (places) => places
+        .where((p) => p.type == 'clothing')
+        .map((p) => p.category)
+        .where((c) => c.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort(),
+    orElse: () => [],
+  );
+});
+
+final availableClothingBudgetsProvider = Provider<List<String>>((ref) {
+  final placesAsync = ref.watch(placesListProvider);
+  return placesAsync.maybeWhen(
+    data: (places) => places
+        .where((p) => p.type == 'clothing')
+        .map((p) => p.budget)
+        .where((b) => b.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort(),
+    orElse: () => [],
+  );
+});
+
+final availableVisitCategoriesProvider = Provider<List<String>>((ref) {
+  final placesAsync = ref.watch(placesListProvider);
+  return placesAsync.maybeWhen(
+    data: (places) => places
+        .where((p) => p.type == 'visit')
+        .map((p) => p.category)
+        .where((c) => c.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort(),
+    orElse: () => [],
+  );
+});
+
+final availableVisitBudgetsProvider = Provider<List<String>>((ref) {
+  final placesAsync = ref.watch(placesListProvider);
+  return placesAsync.maybeWhen(
+    data: (places) => places
+        .where((p) => p.type == 'visit')
+        .map((p) => p.budget)
+        .where((b) => b.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort(),
+    orElse: () => [],
+  );
+});
 
 // Helpers for Sorting and Filtering
 List<PlaceModel> _sortPlaces(List<PlaceModel> list, PlaceSortOption option) {
@@ -195,17 +314,28 @@ final filteredRestaurantsProvider = Provider<List<PlaceModel>>((ref) {
     data: (places) {
       final query = ref.watch(placeSearchQueryProvider);
       final sort = ref.watch(placeSortOptionProvider);
-      final cuisine = ref.watch(restaurantCuisineFilterProvider);
-      final budget = ref.watch(restaurantBudgetFilterProvider);
-      final visitedStr = ref.watch(restaurantVisitedFilterProvider);
+      final selectedCuisines = ref.watch(restaurantCuisineFilterProvider);
+      final selectedBudgets = ref.watch(restaurantBudgetFilterProvider);
+      final selectedVisited = ref.watch(restaurantVisitedFilterProvider);
+      final selectedWishlist = ref.watch(restaurantWishlistFilterProvider);
       final minRating = ref.watch(restaurantRatingFilterProvider);
 
       final restaurants = places.where((p) => p.type == 'restaurant').where((p) {
         if (!_matchesSearch(p, query)) return false;
-        if (cuisine != 'All' && p.category != cuisine) return false;
-        if (budget != 'All' && p.budget != budget) return false;
-        if (visitedStr == 'Visited' && !p.isVisited) return false;
-        if (visitedStr == 'Wishlist-only' && !p.isWishlist) return false;
+        
+        if (selectedCuisines.isNotEmpty && !selectedCuisines.contains(p.category)) return false;
+        if (selectedBudgets.isNotEmpty && !selectedBudgets.contains(p.budget)) return false;
+        
+        if (selectedVisited.isNotEmpty) {
+          if (selectedVisited.contains('Visited') && !selectedVisited.contains('Not Visited') && !p.isVisited) return false;
+          if (selectedVisited.contains('Not Visited') && !selectedVisited.contains('Visited') && p.isVisited) return false;
+        }
+        
+        if (selectedWishlist.isNotEmpty) {
+          if (selectedWishlist.contains('Wishlist') && !selectedWishlist.contains('Not Wishlist') && !p.isWishlist) return false;
+          if (selectedWishlist.contains('Not Wishlist') && !selectedWishlist.contains('Wishlist') && p.isWishlist) return false;
+        }
+
         if (minRating != null && p.rating < minRating) return false;
         return true;
       }).toList();
@@ -222,16 +352,27 @@ final filteredClothingProvider = Provider<List<PlaceModel>>((ref) {
     data: (places) {
       final query = ref.watch(placeSearchQueryProvider);
       final sort = ref.watch(placeSortOptionProvider);
-      final type = ref.watch(clothingTypeFilterProvider);
-      final budget = ref.watch(clothingBudgetFilterProvider);
-      final visitedStr = ref.watch(clothingVisitedFilterProvider);
+      final selectedTypes = ref.watch(clothingTypeFilterProvider);
+      final selectedBudgets = ref.watch(clothingBudgetFilterProvider);
+      final selectedVisited = ref.watch(clothingVisitedFilterProvider);
+      final selectedWishlist = ref.watch(clothingWishlistFilterProvider);
 
       final clothing = places.where((p) => p.type == 'clothing').where((p) {
         if (!_matchesSearch(p, query)) return false;
-        if (type != 'All' && p.category != type) return false;
-        if (budget != 'All' && p.budget != budget) return false;
-        if (visitedStr == 'Visited' && !p.isVisited) return false;
-        if (visitedStr == 'Wishlist-only' && !p.isWishlist) return false;
+        
+        if (selectedTypes.isNotEmpty && !selectedTypes.contains(p.category)) return false;
+        if (selectedBudgets.isNotEmpty && !selectedBudgets.contains(p.budget)) return false;
+        
+        if (selectedVisited.isNotEmpty) {
+          if (selectedVisited.contains('Visited') && !selectedVisited.contains('Not Visited') && !p.isVisited) return false;
+          if (selectedVisited.contains('Not Visited') && !selectedVisited.contains('Visited') && p.isVisited) return false;
+        }
+        
+        if (selectedWishlist.isNotEmpty) {
+          if (selectedWishlist.contains('Wishlist') && !selectedWishlist.contains('Not Wishlist') && !p.isWishlist) return false;
+          if (selectedWishlist.contains('Not Wishlist') && !selectedWishlist.contains('Wishlist') && p.isWishlist) return false;
+        }
+
         return true;
       }).toList();
 
@@ -247,17 +388,27 @@ final filteredVisitsProvider = Provider<List<PlaceModel>>((ref) {
     data: (places) {
       final query = ref.watch(placeSearchQueryProvider);
       final sort = ref.watch(placeSortOptionProvider);
-      final category = ref.watch(visitCategoryFilterProvider);
-      final priceStr = ref.watch(visitPriceFilterProvider);
-      final visitedStr = ref.watch(visitVisitedFilterProvider);
+      final selectedCategories = ref.watch(visitCategoryFilterProvider);
+      final selectedBudgets = ref.watch(visitBudgetFilterProvider);
+      final selectedVisited = ref.watch(visitVisitedFilterProvider);
+      final selectedWishlist = ref.watch(visitWishlistFilterProvider);
 
       final visits = places.where((p) => p.type == 'visit').where((p) {
         if (!_matchesSearch(p, query)) return false;
-        if (category != 'All' && p.category != category) return false;
-        if (priceStr == 'Free' && p.entryFee?.toLowerCase() != 'free') return false;
-        if (priceStr == 'Paid' && p.entryFee?.toLowerCase() == 'free') return false;
-        if (visitedStr == 'Visited' && !p.isVisited) return false;
-        if (visitedStr == 'Wishlist-only' && !p.isWishlist) return false;
+        
+        if (selectedCategories.isNotEmpty && !selectedCategories.contains(p.category)) return false;
+        if (selectedBudgets.isNotEmpty && !selectedBudgets.contains(p.budget)) return false;
+        
+        if (selectedVisited.isNotEmpty) {
+          if (selectedVisited.contains('Visited') && !selectedVisited.contains('Not Visited') && !p.isVisited) return false;
+          if (selectedVisited.contains('Not Visited') && !selectedVisited.contains('Visited') && p.isVisited) return false;
+        }
+        
+        if (selectedWishlist.isNotEmpty) {
+          if (selectedWishlist.contains('Wishlist') && !selectedWishlist.contains('Not Wishlist') && !p.isWishlist) return false;
+          if (selectedWishlist.contains('Not Wishlist') && !selectedWishlist.contains('Wishlist') && p.isWishlist) return false;
+        }
+
         return true;
       }).toList();
 

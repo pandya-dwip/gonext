@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:io';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
@@ -29,6 +30,9 @@ class GNCard extends StatelessWidget {
   final double imageAspectRatio; // For standard card (e.g. 4/3, 4/5, 16/9)
   final String? location;
   final String? category;
+  final Widget? titleWidget;
+  final Widget? subtitleWidget;
+  final Widget? locationWidget;
 
   const GNCard({
     super.key,
@@ -47,6 +51,9 @@ class GNCard extends StatelessWidget {
     this.imageAspectRatio = 4 / 3,
     this.location,
     this.category,
+    this.titleWidget,
+    this.subtitleWidget,
+    this.locationWidget,
   });
 
   @override
@@ -190,7 +197,7 @@ class GNCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  titleWidget ?? Text(
                     title,
                     style: AppTypography.titleLarge.copyWith(fontSize: 18, color: AppColors.textPrimary),
                     maxLines: 1,
@@ -198,7 +205,7 @@ class GNCard extends StatelessWidget {
                   ),
                   if (subtitle != null) ...[
                     AppSizes.gapH4,
-                    Text(
+                    subtitleWidget ?? Text(
                       subtitle!,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.primary,
@@ -215,11 +222,28 @@ class GNCard extends StatelessWidget {
                         const Icon(Icons.location_on_rounded, color: AppColors.textSecondary, size: 14),
                         const SizedBox(width: 6),
                         Expanded(
-                          child: Text(
+                          child: locationWidget ?? Text(
                             location!,
                             style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () {
+                            Clipboard.setData(ClipboardData(text: location!));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Address copied to clipboard'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                          child: const Icon(
+                            Icons.copy_rounded,
+                            color: AppColors.textSecondary,
+                            size: 14,
                           ),
                         ),
                       ],
@@ -408,7 +432,7 @@ class GNCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
+                    titleWidget ?? Text(
                       title,
                       style: AppTypography.bodyEmphasis.copyWith(
                         fontWeight: FontWeight.bold,
@@ -420,7 +444,7 @@ class GNCard extends StatelessWidget {
                     ),
                     if (subtitle != null) ...[
                       AppSizes.gapH2,
-                      Text(
+                      subtitleWidget ?? Text(
                         subtitle!,
                         style: AppTypography.caption.copyWith(
                           fontSize: 11,

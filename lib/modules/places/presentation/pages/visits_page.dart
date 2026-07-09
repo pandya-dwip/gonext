@@ -6,9 +6,9 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/components/gn_card.dart';
 import '../../../../shared/components/gn_chip.dart';
+import '../../../../shared/components/gn_empty_state.dart';
 import '../../data/models/place_model.dart';
 import '../providers/place_provider.dart';
-import 'restaurants_page.dart'; // Import GNEmptyState
 
 /// VisitsPage displays sightseeing nature and landmarks wishlists
 /// utilizing wide 16:9 crop ratios resembling travel postcards.
@@ -89,101 +89,24 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
     );
   }
 
-  void _showFilterOptions(String filterType) {
-    if (filterType == 'All') {
-      ref.read(visitCategoryFilterProvider.notifier).state = 'All';
-      ref.read(visitPriceFilterProvider.notifier).state = 'All';
-      ref.read(visitVisitedFilterProvider.notifier).state = 'All';
-      return;
-    }
-
-    if (filterType == 'Category') {
-      final allPlaces = ref.read(placesListProvider).value ?? [];
-      final categories = allPlaces
-          .where((p) => p.type == 'visit')
-          .map((p) => p.category)
-          .toSet()
-          .toList();
-      categories.sort();
-
-      showModalBottomSheet(
-        context: context,
-        builder: (context) {
-          return SafeArea(
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                ListTile(
-                  title: const Text('All Categories'),
-                  onTap: () {
-                    ref.read(visitCategoryFilterProvider.notifier).state = 'All';
-                    Navigator.pop(context);
-                  },
-                ),
-                ...categories.map((c) => ListTile(
-                  title: Text(c),
-                  onTap: () {
-                    ref.read(visitCategoryFilterProvider.notifier).state = c;
-                    Navigator.pop(context);
-                  },
-                )),
-              ],
-            ),
-          );
-        },
-      );
-    } else if (filterType == 'Entry Fee') {
-      showModalBottomSheet(
-        context: context,
-        builder: (context) {
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  title: const Text('All Spots'),
-                  onTap: () {
-                    ref.read(visitPriceFilterProvider.notifier).state = 'All';
-                    Navigator.pop(context);
-                  },
-                ),
-                ListTile(
-                  title: const Text('Free Entry Only'),
-                  onTap: () {
-                    ref.read(visitPriceFilterProvider.notifier).state = 'Free';
-                    Navigator.pop(context);
-                  },
-                ),
-                ListTile(
-                  title: const Text('Paid Entry Only'),
-                  onTap: () {
-                    ref.read(visitPriceFilterProvider.notifier).state = 'Paid';
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
-          );
-        },
-      );
-    } else if (filterType == 'Wishlist-only') {
-      final current = ref.read(visitVisitedFilterProvider);
-      ref.read(visitVisitedFilterProvider.notifier).state =
-          current == 'Wishlist-only' ? 'All' : 'Wishlist-only';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final visits = ref.watch(filteredVisitsProvider);
+    final allPlaces = ref.watch(placesListProvider).value ?? [];
+    final rawVisitsEmpty = allPlaces.where((p) => p.type == 'visit').isEmpty;
 
-    final activeCategory = ref.watch(visitCategoryFilterProvider);
-    final activePrice = ref.watch(visitPriceFilterProvider);
+    final activeCategories = ref.watch(visitCategoryFilterProvider);
+    final activePrices = ref.watch(visitBudgetFilterProvider);
     final activeVisited = ref.watch(visitVisitedFilterProvider);
+    final activeWishlist = ref.watch(visitWishlistFilterProvider);
 
-    final hasActiveFilter = activeCategory != 'All' ||
-        activePrice != 'All' ||
-        activeVisited == 'Wishlist-only';
+    final availableCategories = ref.watch(availableVisitCategoriesProvider);
+    final availablePrices = ref.watch(availableVisitBudgetsProvider);
+
+    final hasActiveFilter = activeCategories.isNotEmpty ||
+        activePrices.isNotEmpty ||
+        activeVisited.isNotEmpty ||
+        activeWishlist.isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -260,13 +183,73 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
-                  _buildFilterChip('All', !hasActiveFilter),
-                  AppSizes.gapW8,
-                  _buildFilterChip('Category', activeCategory != 'All', suffixText: activeCategory != 'All' ? activeCategory : null),
-                  AppSizes.gapW8,
-                  _buildFilterChip('Entry Fee', activePrice != 'All', suffixText: activePrice != 'All' ? activePrice : null),
-                  AppSizes.gapW8,
-                  _buildFilterChip('Wishlist-only', activeVisited == 'Wishlist-only'),
+                  if (hasActiveFilter) ...[
+                    GNChip(
+                      label: 'Clear Filters',
+                      variant: GNChipVariant.filter,
+                      isSelected: false,
+                      leadingIcon: Icons.clear_all_rounded,
+                      onTap: () {
+                        ref.read(visitCategoryFilterProvider.notifier).clear();
+                        ref.read(visitBudgetFilterProvider.notifier).clear();
+                        ref.read(visitVisitedFilterProvider.notifier).clear();
+                        ref.read(visitWishlistFilterProvider.notifier).clear();
+                      },
+                    ),
+                    AppSizes.gapW8,
+                  ],
+                  // Visited status filters
+                  ...['Visited', 'Not Visited'].map((status) {
+                    final isSelected = activeVisited.contains(status);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: GNChip(
+                        label: status,
+                        variant: GNChipVariant.filter,
+                        isSelected: isSelected,
+                        onTap: () => ref.read(visitVisitedFilterProvider.notifier).toggle(status),
+                      ),
+                    );
+                  }),
+                  // Wishlist status filters
+                  ...['Wishlist', 'Not Wishlist'].map((status) {
+                    final isSelected = activeWishlist.contains(status);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: GNChip(
+                        label: status,
+                        variant: GNChipVariant.filter,
+                        isSelected: isSelected,
+                        onTap: () => ref.read(visitWishlistFilterProvider.notifier).toggle(status),
+                      ),
+                    );
+                  }),
+                  // Entry fees (only existing: Paid/Free)
+                  ...availablePrices.map((p) {
+                    final isSelected = activePrices.contains(p);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: GNChip(
+                        label: p == 'Free' ? 'Free Entry' : 'Paid Entry',
+                        variant: GNChipVariant.filter,
+                        isSelected: isSelected,
+                        onTap: () => ref.read(visitBudgetFilterProvider.notifier).toggle(p),
+                      ),
+                    );
+                  }),
+                  // Categories (only existing)
+                  ...availableCategories.map((c) {
+                    final isSelected = activeCategories.contains(c);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: GNChip(
+                        label: c,
+                        variant: GNChipVariant.filter,
+                        isSelected: isSelected,
+                        onTap: () => ref.read(visitCategoryFilterProvider.notifier).toggle(c),
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
@@ -274,25 +257,36 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
 
             // Postcard 16:9 card list scroll OR empty state
             Expanded(
-              child: visits.isEmpty
+              child: rawVisitsEmpty
                   ? GNEmptyState(
                       title: 'No Places Yet',
-                      subtitle: 'Save heritage sites, national parks, and viewpoints.',
-                      buttonLabel: 'Add Travel Spot',
+                      description: 'Save heritage sites, national parks, and viewpoints.',
+                      actionLabel: 'Add Travel Spot',
                       icon: Icons.travel_explore_rounded,
-                      onButtonPressed: () => context.push('/add-visit'),
+                      onActionPressed: () => context.push('/add-visit'),
                     )
-                  : ListView.separated(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(AppSizes.p16, 0, AppSizes.p16, 120.0),
-                      itemCount: visits.length,
-                      separatorBuilder: (context, index) => AppSizes.gapH24,
-                      itemBuilder: (context, index) {
-                        final place = visits[index];
+                  : (visits.isEmpty
+                      ? GNEmptyState(
+                          title: 'No places match your filters.',
+                          description: 'Try removing some filters.',
+                          actionLabel: 'Clear Filters',
+                          icon: Icons.filter_list_off_rounded,
+                          onActionPressed: () {
+                            ref.read(visitCategoryFilterProvider.notifier).clear();
+                            ref.read(visitBudgetFilterProvider.notifier).clear();
+                            ref.read(visitVisitedFilterProvider.notifier).clear();
+                            ref.read(visitWishlistFilterProvider.notifier).clear();
+                          },
+                        )
+                      : ListView.separated(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(AppSizes.p16, 0, AppSizes.p16, 120.0),
+                          itemCount: visits.length,
+                          separatorBuilder: (context, index) => AppSizes.gapH24,
+                          itemBuilder: (context, index) {
+                            final place = visits[index];
 
-                        return Column(
-                          children: [
-                            GNCard(
+                            return GNCard(
                               variant: GNCardVariant.standard,
                               title: place.name,
                               subtitle: '${place.category} • ${place.entryFee ?? 'Free'}',
@@ -328,41 +322,13 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
                                 );
                                 await ref.read(placesListProvider.notifier).updatePlace(updated);
                               },
-                            ),
-                            AppSizes.gapH8,
-                            Row(
-                              children: [
-                                GNChip(
-                                  label: place.category,
-                                  variant: GNChipVariant.status,
-                                  statusTone: GNStatusTone.info,
-                                ),
-                                AppSizes.gapW8,
-                                GNChip(
-                                  label: place.bestTime ?? 'Winter',
-                                  variant: GNChipVariant.status,
-                                  statusTone: GNStatusTone.success,
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+                            );
+                          },
+                        )),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, bool isSelected, {String? suffixText}) {
-    final displayLabel = suffixText != null ? '$label ($suffixText)' : label;
-    return GNChip(
-      label: displayLabel,
-      variant: GNChipVariant.filter,
-      isSelected: isSelected,
-      onTap: () => _showFilterOptions(label),
     );
   }
 }
