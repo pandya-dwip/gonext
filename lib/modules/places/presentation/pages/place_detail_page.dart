@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:io';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/components/gn_chip.dart';
+import '../../../../shared/components/gn_button.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../providers/place_provider.dart';
 import 'wishlist_page.dart'; // import MapMockPainter for maps preview
@@ -35,21 +36,121 @@ class PlaceDetailPage extends ConsumerWidget {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.pop(context); // Pop dialog
+                Navigator.pop(context); // close dialog
+                context.pop(); // back to listings
                 await ref.read(placesListProvider.notifier).deletePlace(id);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('$name deleted successfully.'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                  Navigator.pop(context); // Pop detail page
-                }
               },
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              style: TextButton.styleFrom(foregroundColor: AppColors.error),
+              child: const Text('Delete'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  void _openMapOptions(BuildContext context, String name, double lat, double lng) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.cardSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.p24, vertical: AppSizes.p16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                AppSizes.gapH24,
+                Text(
+                  'Open in Maps',
+                  style: AppTypography.title.copyWith(fontWeight: FontWeight.bold, fontSize: 20),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Choose how you would like to view or navigate to $name.',
+                  style: AppTypography.caption,
+                ),
+                AppSizes.gapH24,
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.map_rounded, color: AppColors.primary),
+                  ),
+                  title: Text('Google Maps', style: AppTypography.bodyEmphasis.copyWith(fontWeight: FontWeight.bold)),
+                  subtitle: Text('View location on map', style: AppTypography.caption),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+                    try {
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url, mode: LaunchMode.externalApplication);
+                      }
+                    } catch (_) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Failed to open maps.')),
+                      );
+                    }
+                  },
+                ),
+                const Divider(),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.navigation_rounded, color: AppColors.primary),
+                  ),
+                  title: Text('Google Maps Navigation', style: AppTypography.bodyEmphasis.copyWith(fontWeight: FontWeight.bold)),
+                  subtitle: Text('Get directions to this place', style: AppTypography.caption),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final url = Uri.parse('google.navigation:q=$lat,$lng');
+                    final fallbackUrl = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
+                    try {
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url);
+                      } else if (await canLaunchUrl(fallbackUrl)) {
+                        await launchUrl(fallbackUrl, mode: LaunchMode.externalApplication);
+                      }
+                    } catch (_) {
+                      if (await canLaunchUrl(fallbackUrl)) {
+                        await launchUrl(fallbackUrl, mode: LaunchMode.externalApplication);
+                      }
+                    }
+                  },
+                ),
+                AppSizes.gapH24,
+                SizedBox(
+                  width: double.infinity,
+                  child: GNButton(
+                    label: 'Cancel',
+                    variant: GNButtonVariant.secondary,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
@@ -63,7 +164,7 @@ class PlaceDetailPage extends ConsumerWidget {
       } else {
         return Container(
           color: AppColors.surfaceFaint,
-          child: const Center(
+          child: Center(
             child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 48),
           ),
         );
@@ -84,7 +185,7 @@ class PlaceDetailPage extends ConsumerWidget {
     final placesAsync = ref.watch(placesListProvider);
 
     return placesAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator(color: AppColors.primary))),
+      loading: () => Scaffold(body: Center(child: CircularProgressIndicator(color: AppColors.primary))),
       error: (err, stack) => Scaffold(body: Center(child: Text('Error: $err'))),
       data: (places) {
         final matches = places.where((p) => p.id == id).toList();
@@ -99,7 +200,7 @@ class PlaceDetailPage extends ConsumerWidget {
           body: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // Cover sliver
+              // Immersive Hero sliver app bar
               SliverAppBar(
                 expandedHeight: 300,
                 pinned: true,
@@ -141,6 +242,7 @@ class PlaceDetailPage extends ConsumerWidget {
                     fit: StackFit.expand,
                     children: [
                       _buildDetailImage(place.imageType, place.imageUrl),
+                      // Dark Gradients Scrim
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -185,60 +287,8 @@ class PlaceDetailPage extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Status Row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.star_rounded, color: AppColors.primary, size: 18),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    place.rating.toStringAsFixed(1),
-                                    style: AppTypography.bodyEmphasis.copyWith(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                GNChip(
-                                  label: place.category,
-                                  variant: GNChipVariant.status,
-                                  statusTone: GNStatusTone.info,
-                                ),
-                                AppSizes.gapW8,
-                                GNChip(
-                                  label: place.isVisited ? 'Visited' : 'Wishlist',
-                                  variant: GNChipVariant.status,
-                                  statusTone: place.isVisited ? GNStatusTone.success : GNStatusTone.warning,
-                                  leadingIcon: place.isVisited ? Icons.verified_rounded : Icons.bookmark_rounded,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        AppSizes.gapH24,
-
-                        Text('Description'.toUpperCase(), style: AppTypography.overline),
-                        AppSizes.gapH8,
-                        Text(
-                          place.description,
-                          style: AppTypography.body.copyWith(height: 1.6),
-                        ),
-                        AppSizes.gapH32,
-
-                        Text('Information'.toUpperCase(), style: AppTypography.overline),
-                        AppSizes.gapH12,
+                        // SECTION 1: General Information
+                        _buildSectionHeader(icon: Icons.travel_explore_rounded, title: 'General Information'),
                         _buildInfoCard(
                           icon: Icons.category_rounded,
                           title: 'Category',
@@ -252,92 +302,181 @@ class PlaceDetailPage extends ConsumerWidget {
                         ),
                         AppSizes.gapH12,
                         _buildInfoCard(
-                          icon: Icons.wb_sunny_rounded,
-                          title: 'Best Season',
-                          value: place.bestTime ?? 'Winter',
+                          icon: Icons.calendar_today_rounded,
+                          title: 'Best Time to Visit',
+                          value: place.bestTime ?? 'Year-round',
                         ),
-                        AppSizes.gapH12,
-                        _buildLocationCard(
-                          context,
-                          address: place.location,
-                          latitude: place.latitude,
-                          longitude: place.longitude,
+                        AppSizes.gapH16,
+                        Text('Description', style: AppTypography.caption.copyWith(fontWeight: FontWeight.bold)),
+                        AppSizes.gapH8,
+                        Text(
+                          place.description,
+                          style: AppTypography.body.copyWith(height: 1.6),
                         ),
                         AppSizes.gapH32,
 
-                        Text('Location Map'.toUpperCase(), style: AppTypography.overline),
-                        AppSizes.gapH12,
+                        // SECTION 2: Ratings & Wishlist
+                        _buildSectionHeader(icon: Icons.star_rounded, title: 'Ratings & Wishlist'),
                         Container(
-                          height: 180,
+                          padding: const EdgeInsets.all(AppSizes.p16),
                           decoration: BoxDecoration(
                             color: AppColors.surfaceFaint,
-                            borderRadius: BorderRadius.circular(AppSizes.r24),
+                            borderRadius: BorderRadius.circular(AppSizes.r16),
                             border: Border.all(color: AppColors.border),
                           ),
-                          clipBehavior: Clip.antiAlias,
-                          child: Stack(
-                            fit: StackFit.expand,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              if (hasMapKey && place.latitude != null && place.longitude != null)
-                                AbsorbPointer(
-                                  child: GoogleMap(
-                                    initialCameraPosition: CameraPosition(
-                                      target: LatLng(place.latitude!, place.longitude!),
-                                      zoom: 14,
-                                    ),
-                                    markers: {
-                                      Marker(
-                                        markerId: const MarkerId('detail-loc'),
-                                        position: LatLng(place.latitude!, place.longitude!),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Average Rating', style: AppTypography.caption),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.star_rounded, color: Colors.orange, size: 24),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        place.rating.toStringAsFixed(1),
+                                        style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
                                       ),
-                                    },
-                                    zoomControlsEnabled: false,
-                                    myLocationButtonEnabled: false,
+                                    ],
                                   ),
-                                )
-                              else ...[
-                                CustomPaint(painter: MapMockPainter()),
-                                if (place.latitude != null && place.longitude != null)
-                                  Container(
-                                    color: Colors.black.withValues(alpha: 0.65),
-                                    padding: const EdgeInsets.all(AppSizes.p16),
-                                    alignment: Alignment.center,
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(Icons.map_rounded, color: Colors.white, size: 24),
-                                        AppSizes.gapH4,
-                                        Text(
-                                          'Maps API key is missing. Live preview is disabled.',
-                                          style: AppTypography.caption.copyWith(color: Colors.white, fontSize: 11),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text('Status', style: AppTypography.caption),
+                                  const SizedBox(height: 4),
+                                  GNChip(
+                                    label: place.isVisited ? 'Visited' : 'Wishlist',
+                                    variant: GNChipVariant.status,
+                                    statusTone: place.isVisited ? GNStatusTone.success : GNStatusTone.info,
+                                    leadingIcon: place.isVisited ? Icons.verified_rounded : Icons.bookmark_rounded,
                                   ),
-                              ],
+                                ],
+                              ),
                             ],
                           ),
                         ),
                         AppSizes.gapH32,
 
-                        Divider(color: AppColors.border.withValues(alpha: 0.5)),
+                        // SECTION 3: Location Details
+                        _buildSectionHeader(icon: Icons.location_on_rounded, title: 'Location Details'),
+                        _buildInfoCard(
+                          icon: Icons.map_outlined,
+                          title: 'Address',
+                          value: place.location,
+                        ),
                         AppSizes.gapH12,
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text('Added on ${place.dateAdded}', style: AppTypography.caption),
+                        if (place.latitude != null && place.longitude != null) ...[
+                          _buildInfoCard(
+                            icon: Icons.gps_fixed_rounded,
+                            title: 'Coordinates',
+                            value: '${place.latitude!.toStringAsFixed(6)}, ${place.longitude!.toStringAsFixed(6)}',
+                          ),
+                          AppSizes.gapH16,
+                        ],
+                        GestureDetector(
+                          onTap: () {
+                            if (place.latitude != null && place.longitude != null) {
+                              _openMapOptions(context, place.name, place.latitude!, place.longitude!);
+                            }
+                          },
+                          child: Container(
+                            height: 180,
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceFaint,
+                              borderRadius: BorderRadius.circular(AppSizes.r24),
+                              border: Border.all(color: AppColors.border),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Updated on ${place.lastUpdated}',
-                                style: AppTypography.caption,
-                                textAlign: TextAlign.end,
-                              ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                if (hasMapKey && place.latitude != null && place.longitude != null)
+                                  AbsorbPointer(
+                                    child: GoogleMap(
+                                      initialCameraPosition: CameraPosition(
+                                        target: LatLng(place.latitude!, place.longitude!),
+                                        zoom: 14,
+                                      ),
+                                      markers: {
+                                        Marker(
+                                          markerId: const MarkerId('detail-loc'),
+                                          position: LatLng(place.latitude!, place.longitude!),
+                                        ),
+                                      },
+                                      zoomControlsEnabled: false,
+                                      myLocationButtonEnabled: false,
+                                    ),
+                                  )
+                                else ...[
+                                  CustomPaint(painter: MapMockPainter()),
+                                  if (place.latitude != null && place.longitude != null)
+                                    Container(
+                                      color: Colors.black.withValues(alpha: 0.65),
+                                      padding: const EdgeInsets.all(AppSizes.p16),
+                                      alignment: Alignment.center,
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(Icons.map_rounded, color: Colors.white, size: 24),
+                                          AppSizes.gapH4,
+                                          Text(
+                                            'Maps API key is missing. Tap to view options.',
+                                            style: AppTypography.caption.copyWith(color: Colors.white, fontSize: 11),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  else
+                                    Container(
+                                      color: Colors.black.withValues(alpha: 0.65),
+                                      padding: const EdgeInsets.all(AppSizes.p16),
+                                      alignment: Alignment.center,
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(Icons.location_off_rounded, color: Colors.white, size: 24),
+                                          AppSizes.gapH4,
+                                          Text(
+                                            'No coordinates provided for this location.',
+                                            style: AppTypography.caption.copyWith(color: Colors.white, fontSize: 11),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ],
                             ),
-                          ],
+                          ),
+                        ),
+                        AppSizes.gapH32,
+
+                        // SECTION 4: Audit Information
+                        _buildSectionHeader(icon: Icons.history_rounded, title: 'Audit Information'),
+                        Container(
+                          padding: const EdgeInsets.all(AppSizes.p16),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceFaint,
+                            borderRadius: BorderRadius.circular(AppSizes.r16),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Column(
+                            children: [
+                              _buildAuditRow('Created On', place.dateAdded),
+                              const Divider(height: 16),
+                              _buildAuditRow('Updated On', place.lastUpdated.split(' ').first),
+                              const Divider(height: 16),
+                              _buildAuditRow('Created By', place.isDemoData ? 'Demo System' : 'User (You)'),
+                              const Divider(height: 16),
+                              _buildAuditRow('Last Modified', place.lastUpdated),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 60),
                       ],
@@ -349,6 +488,41 @@ class PlaceDetailPage extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSectionHeader({required IconData icon, required String title}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: AppColors.primary, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              title.toUpperCase(),
+              style: AppTypography.overline.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        const Divider(),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildAuditRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: AppTypography.caption),
+        Text(value, style: AppTypography.bodyEmphasis.copyWith(fontWeight: FontWeight.bold)),
+      ],
     );
   }
 
@@ -380,106 +554,6 @@ class PlaceDetailPage extends ConsumerWidget {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _copyToClipboard(BuildContext context, String text, String message) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  Widget _buildLocationCard(
-    BuildContext context, {
-    required String address,
-    required double? latitude,
-    required double? longitude,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(AppSizes.p16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceFaint,
-        borderRadius: BorderRadius.circular(AppSizes.r16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 22),
-              AppSizes.gapW16,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Location / Address', style: AppTypography.caption),
-                    const SizedBox(height: 4),
-                    Text(
-                      address,
-                      style: AppTypography.bodyEmphasis.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const Divider(height: 24, color: AppColors.border),
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            children: [
-              TextButton.icon(
-                onPressed: () => _copyToClipboard(
-                  context,
-                  address,
-                  'Address copied to clipboard',
-                ),
-                icon: const Icon(Icons.copy_rounded, size: 14, color: AppColors.primary),
-                label: Text(
-                  'Copy Address',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-              if (latitude != null && longitude != null) ...[
-                TextButton.icon(
-                  onPressed: () => _copyToClipboard(
-                    context,
-                    '$latitude,$longitude',
-                    'Coordinates copied to clipboard',
-                  ),
-                  icon: const Icon(Icons.gps_fixed_rounded, size: 14, color: AppColors.primary),
-                  label: Text(
-                    'Copy Coordinates',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ],
-            ],
           ),
         ],
       ),

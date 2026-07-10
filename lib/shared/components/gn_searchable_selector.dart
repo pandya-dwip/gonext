@@ -74,7 +74,7 @@ class _GNSearchableSelectorState extends State<GNSearchableSelector> {
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.75, // Lock height to 75% screen
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.r24)),
       ),
@@ -100,7 +100,7 @@ class _GNSearchableSelectorState extends State<GNSearchableSelector> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                icon: Icon(Icons.close_rounded, color: AppColors.textSecondary),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -123,10 +123,10 @@ class _GNSearchableSelectorState extends State<GNSearchableSelector> {
             style: AppTypography.body,
             decoration: InputDecoration(
               hintText: 'Search options...',
-              prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary),
+              prefixIcon: Icon(Icons.search_rounded, color: AppColors.textSecondary),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear_rounded, color: AppColors.textSecondary, size: 18),
+                      icon: Icon(Icons.clear_rounded, color: AppColors.textSecondary, size: 18),
                       onPressed: () => _searchController.clear(),
                     )
                   : null,
@@ -143,7 +143,7 @@ class _GNSearchableSelectorState extends State<GNSearchableSelector> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.search_off_rounded, size: 48, color: AppColors.textMuted),
+                          Icon(Icons.search_off_rounded, size: 48, color: AppColors.textMuted),
                           AppSizes.gapH16,
                           Text('No options found', style: AppTypography.bodyEmphasis),
                         ],
@@ -153,7 +153,7 @@ class _GNSearchableSelectorState extends State<GNSearchableSelector> {
                 : ListView.separated(
                     physics: const BouncingScrollPhysics(),
                     itemCount: _filteredOptions.length,
-                    separatorBuilder: (context, index) => const Divider(color: AppColors.border, height: 1),
+                    separatorBuilder: (context, index) => Divider(color: AppColors.border, height: 1),
                     itemBuilder: (context, index) {
                       final option = _filteredOptions[index];
                       final isSelected = widget.initialValue == option;
@@ -167,7 +167,7 @@ class _GNSearchableSelectorState extends State<GNSearchableSelector> {
                           ),
                         ),
                         trailing: isSelected
-                            ? const Icon(Icons.check_rounded, color: AppColors.primary, size: 18)
+                            ? Icon(Icons.check_rounded, color: AppColors.primary, size: 18)
                             : null,
                         contentPadding: EdgeInsets.zero,
                         onTap: () => Navigator.pop(context, option),

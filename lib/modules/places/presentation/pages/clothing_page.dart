@@ -6,7 +6,6 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/components/gn_card.dart';
 import '../../../../shared/components/gn_chip.dart';
-import '../../../../shared/components/gn_button.dart';
 import '../../../../shared/components/gn_empty_state.dart';
 import '../../data/models/place_model.dart';
 import '../providers/place_provider.dart';
@@ -148,7 +147,7 @@ class _ClothingPageState extends ConsumerState<ClothingPage> {
                 padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
                 child: Row(
                   children: [
-                    const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
+                    Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
                     AppSizes.gapW8,
                     Expanded(
                       child: TextField(
@@ -169,7 +168,7 @@ class _ClothingPageState extends ConsumerState<ClothingPage> {
                     ),
                     GestureDetector(
                       onTap: _showSortBottomSheet,
-                      child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),
+                      child: Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),
                     ),
                   ],
                 ),

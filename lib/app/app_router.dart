@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../modules/dashboard/presentation/pages/dashboard_page.dart';
 import '../modules/splash/presentation/pages/splash_page.dart';
 import '../modules/settings/presentation/pages/settings_page.dart';
+import '../modules/settings/presentation/pages/privacy_policy_page.dart';
+import '../modules/settings/presentation/pages/terms_conditions_page.dart';
+import '../modules/settings/presentation/pages/theme_gallery_page.dart';
 import '../modules/places/presentation/pages/add_restaurant_page.dart';
 import '../modules/places/presentation/pages/add_clothing_page.dart';
 import '../modules/places/presentation/pages/add_visit_page.dart';
@@ -31,6 +34,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const SettingsPage(),
+        routes: [
+          GoRoute(
+            path: 'privacy-policy',
+            name: 'privacy-policy',
+            builder: (context, state) => const PrivacyPolicyPage(),
+          ),
+          GoRoute(
+            path: 'terms-conditions',
+            name: 'terms-conditions',
+            builder: (context, state) => const TermsConditionsPage(),
+          ),
+          GoRoute(
+            path: 'theme-gallery',
+            name: 'theme-gallery',
+            builder: (context, state) => const ThemeGalleryPage(),
+          ),
+        ],
       ),
       GoRoute(
         path: '/add-restaurant',

@@ -11,6 +11,7 @@ void main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(PlaceModelAdapter());
   await Hive.openBox<PlaceModel>('places_box');
+  await Hive.openBox('settings_box');
 
   runApp(
     const ProviderScope(

@@ -29,4 +29,17 @@ class PlaceRepositoryImpl implements PlaceRepository {
     final box = await _box;
     await box.delete(id);
   }
+
+  @override
+  Future<void> clearAll() async {
+    final box = await _box;
+    await box.clear();
+  }
+
+  @override
+  Future<void> savePlaces(List<PlaceModel> places) async {
+    final box = await _box;
+    final Map<String, PlaceModel> entries = {for (var p in places) p.id: p};
+    await box.putAll(entries);
+  }
 }

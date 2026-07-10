@@ -56,7 +56,7 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
     final placesAsync = ref.watch(placesListProvider);
 
     return placesAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator(color: AppColors.primary))),
+      loading: () => Scaffold(body: Center(child: CircularProgressIndicator(color: AppColors.primary))),
       error: (err, stack) => Scaffold(body: Center(child: Text('Error: $err'))),
       data: (places) {
         if (places.isEmpty) {
@@ -114,7 +114,7 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                           backgroundColor: AppColors.surfaceFaint,
                           child: IconButton(
                             padding: EdgeInsets.zero,
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.settings_rounded,
                               color: AppColors.textPrimary,
                               size: AppSizes.s24,
@@ -140,7 +140,7 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                       padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
                       child: Row(
                         children: [
-                          const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
+                          Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
                           AppSizes.gapW8,
                           Expanded(
                             child: TextField(
@@ -164,7 +164,7 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                               _searchController.clear();
                               ref.read(homeSearchQueryProvider.notifier).state = '';
                             },
-                            child: const Icon(Icons.close_rounded, color: AppColors.textSecondary, size: 20),
+                            child: Icon(Icons.close_rounded, color: AppColors.textSecondary, size: 20),
                           ),
                         ],
                       ),
@@ -273,7 +273,7 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                         backgroundColor: AppColors.surfaceFaint,
                         child: IconButton(
                           padding: EdgeInsets.zero,
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.settings_rounded,
                             color: AppColors.textPrimary,
                             size: AppSizes.s24,
@@ -296,7 +296,7 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                     padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
                     child: Row(
                       children: [
-                        const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
+                        Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
                         AppSizes.gapW8,
                         Expanded(
                           child: TextField(
@@ -321,7 +321,7 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                               _searchController.clear();
                               ref.read(homeSearchQueryProvider.notifier).state = '';
                             },
-                            child: const Icon(Icons.close_rounded, color: AppColors.textSecondary, size: 20),
+                            child: Icon(Icons.close_rounded, color: AppColors.textSecondary, size: 20),
                           ),
                       ],
                     ),
@@ -405,8 +405,8 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                     },
                   ),
                   if (restaurants.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Text('No restaurants saved yet.', style: TextStyle(color: AppColors.textSecondary)),
                     )
                   else
@@ -444,8 +444,8 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                     },
                   ),
                   if (clothing.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Text('No boutiques saved yet.', style: TextStyle(color: AppColors.textSecondary)),
                     )
                   else
@@ -483,8 +483,8 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                     },
                   ),
                   if (visits.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Text('No travel spots saved yet.', style: TextStyle(color: AppColors.textSecondary)),
                     )
                   else
@@ -599,8 +599,8 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
   /// Builds the 2x2 Grid of Wishlist preview tiles (with +N overlay on the 4th item)
   Widget _buildWishlistPreview(BuildContext context, WidgetRef ref, List<PlaceModel> wishlist) {
     if (wishlist.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16.0),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16.0),
         child: Text('No wishlist items saved yet.', style: TextStyle(color: AppColors.textSecondary)),
       );
     }

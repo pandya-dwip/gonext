@@ -131,7 +131,7 @@ class GNCurvedNavigationBar extends StatelessWidget {
               height: 58,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [AppColors.primary, AppColors.secondary],
@@ -240,7 +240,7 @@ class CurvedNavigationBarPainter extends CustomPainter {
       ..close();
 
     // Paint shadow first
-    canvas.drawShadow(path, const Color(0x1A0F5E45), 8.0, true);
+    canvas.drawShadow(path, AppColors.isDark ? const Color(0x3D000000) : const Color(0x1A0F5E45), 8.0, true);
     canvas.drawPath(path, paint);
 
     // Hairline top border

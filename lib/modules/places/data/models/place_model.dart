@@ -59,6 +59,9 @@ class PlaceModel extends HiveObject {
   @HiveField(17)
   final String imageType; // 'asset', 'file', 'network'
 
+  @HiveField(18, defaultValue: false)
+  final bool isDemoData;
+
   PlaceModel({
     required this.id,
     required this.name,
@@ -78,6 +81,7 @@ class PlaceModel extends HiveObject {
     required this.dateAdded,
     required this.lastUpdated,
     required this.imageType,
+    this.isDemoData = false,
   });
 
   Place toEntity() {
@@ -122,6 +126,55 @@ class PlaceModel extends HiveObject {
       dateAdded: entity.dateAdded,
       lastUpdated: entity.lastUpdated,
       imageType: imageType,
+      isDemoData: entity is PlaceModel ? (entity as PlaceModel).isDemoData : false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'category': category,
+      'budget': budget,
+      'location': location,
+      'rating': rating,
+      'isWishlist': isWishlist,
+      'isVisited': isVisited,
+      'imageUrl': imageUrl,
+      'type': type,
+      'entryFee': entryFee,
+      'bestTime': bestTime,
+      'latitude': latitude,
+      'longitude': longitude,
+      'dateAdded': dateAdded,
+      'lastUpdated': lastUpdated,
+      'imageType': imageType,
+      'isDemoData': isDemoData,
+    };
+  }
+
+  factory PlaceModel.fromJson(Map<String, dynamic> json) {
+    return PlaceModel(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String,
+      category: json['category'] as String,
+      budget: json['budget'] as String,
+      location: json['location'] as String,
+      rating: (json['rating'] as num).toDouble(),
+      isWishlist: json['isWishlist'] as bool,
+      isVisited: json['isVisited'] as bool,
+      imageUrl: json['imageUrl'] as String,
+      type: json['type'] as String,
+      entryFee: json['entryFee'] as String?,
+      bestTime: json['bestTime'] as String?,
+      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
+      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
+      dateAdded: json['dateAdded'] as String,
+      lastUpdated: json['lastUpdated'] as String,
+      imageType: json['imageType'] as String? ?? 'asset',
+      isDemoData: json['isDemoData'] as bool? ?? false,
     );
   }
 }

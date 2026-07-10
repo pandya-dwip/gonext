@@ -25,7 +25,7 @@ class _GNAddPlaceSheetState extends State<GNAddPlaceSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.r24)),
       ),
@@ -50,7 +50,7 @@ class _GNAddPlaceSheetState extends State<GNAddPlaceSheet> {
               ),
               // Top-right Close Button
               IconButton(
-                icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                icon: Icon(Icons.close_rounded, color: AppColors.textSecondary),
                 onPressed: () => Navigator.pop(context),
               ),
             ],

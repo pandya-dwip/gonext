@@ -54,7 +54,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
   bool _isGeocoding = false;
   geo.Geocoding get _geocoding => geo.Geocoding();
 
-  String? _imagePath = 'assets/images/visits/default_1.jpg';
+  String? _imagePath = 'assets/images/visits/default_1.png';
   String _imageType = 'asset'; // 'asset' or 'file'
 
   // Read-only Dates
@@ -194,7 +194,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
                   onTap: () {
                     Navigator.pop(context);
                     setState(() {
-                      _imagePath = 'assets/images/visits/default_1.jpg';
+                      _imagePath = 'assets/images/visits/default_1.png';
                       _imageType = 'asset';
                     });
                   },
@@ -256,7 +256,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                 Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
               ],
             ),
           ),
@@ -276,7 +276,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
       } else {
         return Container(
           color: AppColors.surfaceFaint,
-          child: const Center(
+          child: Center(
             child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 48),
           ),
         );
@@ -468,7 +468,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
           rating: _rating,
           isVisited: _isVisited,
           isWishlist: _isWishlist,
-          imageUrl: _imagePath ?? 'assets/images/visits/default_1.jpg',
+          imageUrl: _imagePath ?? 'assets/images/visits/default_1.png',
           type: 'visit',
           entryFee: fee.isEmpty ? 'Free' : fee,
           bestTime: _selectedSeason,
@@ -491,7 +491,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
           rating: _rating,
           isVisited: _isVisited,
           isWishlist: _isWishlist,
-          imageUrl: _imagePath ?? 'assets/images/visits/default_1.jpg',
+          imageUrl: _imagePath ?? 'assets/images/visits/default_1.png',
           type: 'visit',
           entryFee: fee.isEmpty ? 'Free' : fee,
           bestTime: _selectedSeason,
@@ -526,7 +526,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
       appBar: AppBar(
         title: Text(widget.editPlaceId != null ? 'Edit Place' : 'New Place', style: AppTypography.title),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
           onPressed: () => context.pop(),
         ),
       ),
@@ -555,7 +555,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
                         child: Container(
                           height: 180,
                           width: double.infinity,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             color: AppColors.surfaceFaint,
                           ),
                           child: Stack(
@@ -662,7 +662,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
                             child: TextFormField(
                               controller: TextEditingController(text: _selectedCategory),
                               style: AppTypography.bodyEmphasis,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'Category *',
                                 suffixIcon: Icon(Icons.arrow_drop_down_rounded, color: AppColors.primary),
                               ),
@@ -680,7 +680,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
                         TextFormField(
                           controller: _feeController,
                           style: AppTypography.body,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Entry Fee / Ticket Cost',
                             hintText: 'e.g. Free or ₹250 per head',
                             prefixIcon: Icon(Icons.confirmation_number_rounded, color: AppColors.primary),
@@ -696,7 +696,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
                             child: TextFormField(
                               controller: TextEditingController(text: _selectedSeason),
                               style: AppTypography.bodyEmphasis,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'Best Time to Visit *',
                                 suffixIcon: Icon(Icons.arrow_drop_down_rounded, color: AppColors.primary),
                               ),
@@ -764,7 +764,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
                             child: TextFormField(
                               controller: _locController,
                               style: AppTypography.body,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'Select Location *',
                                 hintText: 'Tap to open location picker...',
                                 prefixIcon: Icon(Icons.location_on_rounded, color: AppColors.primary),
@@ -804,7 +804,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
                                     ),
                                   );
                                 },
-                                icon: const Icon(Icons.copy_rounded, size: 14, color: AppColors.primary),
+                                icon: Icon(Icons.copy_rounded, size: 14, color: AppColors.primary),
                                 label: Text(
                                   'Copy Address',
                                   style: AppTypography.caption.copyWith(
@@ -829,7 +829,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
                                       ),
                                     );
                                   },
-                                  icon: const Icon(Icons.gps_fixed_rounded, size: 14, color: AppColors.primary),
+                                  icon: Icon(Icons.gps_fixed_rounded, size: 14, color: AppColors.primary),
                                   label: Text(
                                     'Copy Coordinates',
                                     style: AppTypography.caption.copyWith(
@@ -888,7 +888,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
                                       child: Column(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          const Icon(Icons.map_rounded, color: AppColors.primary, size: 32),
+                                          Icon(Icons.map_rounded, color: AppColors.primary, size: 32),
                                           AppSizes.gapH8,
                                           Text(
                                             'No location selected yet',
@@ -927,7 +927,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
                                   Container(
                                     color: Colors.black.withValues(alpha: 0.3),
                                     alignment: Alignment.center,
-                                    child: const CircularProgressIndicator(color: AppColors.primary),
+                                    child: CircularProgressIndicator(color: AppColors.primary),
                                   ),
                               ],
                             ),
@@ -1020,7 +1020,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 24),
+                          Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 24),
                           AppSizes.gapW16,
                           Expanded(
                             child: Column(
@@ -1036,7 +1036,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
                                 const SizedBox(height: 6),
                                 Row(
                                   children: [
-                                    const Icon(Icons.add_circle_outline_rounded, size: 14, color: AppColors.textSecondary),
+                                     Icon(Icons.add_circle_outline_rounded, size: 14, color: AppColors.textSecondary),
                                     const SizedBox(width: 6),
                                     Text('Date Added: $_dateAdded', style: AppTypography.caption),
                                   ],
@@ -1044,7 +1044,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
                                 AppSizes.gapH2,
                                 Row(
                                   children: [
-                                    const Icon(Icons.update_rounded, size: 14, color: AppColors.textSecondary),
+                                     Icon(Icons.update_rounded, size: 14, color: AppColors.textSecondary),
                                     const SizedBox(width: 6),
                                     Text('Last Updated: $_lastUpdated', style: AppTypography.caption),
                                   ],
@@ -1065,7 +1065,7 @@ class _AddVisitPageState extends ConsumerState<AddVisitPage> {
           // Sticky Button Bar at bottom
           Container(
             padding: const EdgeInsets.all(AppSizes.p16),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.background,
               boxShadow: AppSizes.shadowLevel1,
               border: Border(top: BorderSide(color: AppColors.border)),

@@ -73,7 +73,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
         children: [
           // Background soft gradient
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,

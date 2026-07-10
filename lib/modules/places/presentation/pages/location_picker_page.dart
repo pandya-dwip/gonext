@@ -64,36 +64,48 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
         final place = placemarks.first;
         final name = place.name;
         final street = place.street;
-        final subLocality = place.subLocality;
         final locality = place.locality;
-        final adminArea = place.administrativeArea;
-
-        final isPlusCode = name != null && name.contains('+');
+        final country = place.country;
 
         final parts = <String>[];
-        // Priority order: Landmark name -> Locality -> Street address
-        if (name != null && name.isNotEmpty && !isPlusCode && name != street) {
-          final isJustNumber = double.tryParse(name.replaceAll(RegExp(r'[^\d.]'), '')) != null;
-          if (!isJustNumber) {
+
+        // 1. Landmark/Name (filter out if it is a plus code or just coordinates/numbers)
+        if (name != null && name.isNotEmpty) {
+          final isPlusCode = name.contains('+');
+          final isNumber = double.tryParse(name.replaceAll(RegExp(r'[^\d.]'), '')) != null;
+          if (!isPlusCode && !isNumber && name != street) {
             parts.add(name);
           }
         }
-        
+
+        // 2. Street address / road
         if (street != null && street.isNotEmpty) {
-          parts.add(street);
+          if (parts.isEmpty || !parts.contains(street)) {
+            parts.add(street);
+          }
         }
-        if (subLocality != null && subLocality.isNotEmpty && subLocality != name) {
-          parts.add(subLocality);
-        }
+
+        // 3. Locality / City
         if (locality != null && locality.isNotEmpty) {
           parts.add(locality);
         }
-        if (adminArea != null && adminArea.isNotEmpty) {
-          parts.add(adminArea);
+
+        // 4. Country
+        if (country != null && country.isNotEmpty) {
+          parts.add(country);
         }
 
-        if (parts.isEmpty && name != null) {
-          parts.add(name);
+        // Fallback: if parts is empty, construct a basic fallback
+        if (parts.isEmpty) {
+          if (place.thoroughfare != null && place.thoroughfare!.isNotEmpty) {
+            parts.add(place.thoroughfare!);
+          }
+          if (locality != null && locality.isNotEmpty) {
+            parts.add(locality);
+          }
+          if (parts.isEmpty && name != null) {
+            parts.add(name);
+          }
         }
 
         setState(() {
@@ -204,12 +216,12 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
       appBar: AppBar(
         title: Text('Select Location', style: AppTypography.title),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: latLng == null
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -273,7 +285,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.map_outlined, color: AppColors.primary, size: 48),
+                                      Icon(Icons.map_outlined, color: AppColors.primary, size: 48),
                                       AppSizes.gapH16,
                                       Text(
                                         'Interactive Map Disabled',
@@ -318,7 +330,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                         color: AppColors.cardSurface,
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                         boxShadow: AppSizes.shadowLevel3,
-                        border: const Border(top: BorderSide(color: AppColors.border)),
+                        border: Border(top: BorderSide(color: AppColors.border)),
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -326,7 +338,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 20),
+                              Icon(Icons.location_on_rounded, color: AppColors.primary, size: 20),
                               const SizedBox(width: 8),
                               Text(
                                 'Selected Location',
@@ -354,7 +366,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                               AppSizes.gapW16,
                               Expanded(
                                 child: GNButton(
-                                  label: 'Confirm',
+                                  label: 'Save Location',
                                   variant: GNButtonVariant.primary,
                                   onPressed: _confirmLocation,
                                 ),
@@ -371,7 +383,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                     Container(
                       color: Colors.black.withValues(alpha: 0.15),
                       alignment: Alignment.center,
-                      child: const CircularProgressIndicator(color: AppColors.primary),
+                      child: CircularProgressIndicator(color: AppColors.primary),
                     ),
                 ],
               ),

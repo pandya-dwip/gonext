@@ -35,13 +35,14 @@ class PlaceModelAdapter extends TypeAdapter<PlaceModel> {
       dateAdded: fields[15] as String,
       lastUpdated: fields[16] as String,
       imageType: fields[17] as String,
+      isDemoData: fields[18] == null ? false : fields[18] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, PlaceModel obj) {
     writer
-      ..writeByte(18)
+      ..writeByte(19)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -77,7 +78,9 @@ class PlaceModelAdapter extends TypeAdapter<PlaceModel> {
       ..writeByte(16)
       ..write(obj.lastUpdated)
       ..writeByte(17)
-      ..write(obj.imageType);
+      ..write(obj.imageType)
+      ..writeByte(18)
+      ..write(obj.isDemoData);
   }
 
   @override

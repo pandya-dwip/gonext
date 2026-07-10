@@ -72,7 +72,7 @@ class GNButton extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             minimumSize: Size(fullWidth ? double.infinity : 88, buttonHeight),
             maximumSize: Size(double.infinity, buttonHeight),
-            side: const BorderSide(color: AppColors.primary, width: 1.5),
+            side: BorderSide(color: AppColors.primary, width: 1.5),
             foregroundColor: AppColors.primary,
             disabledForegroundColor: AppColors.primary.withValues(alpha: 0.4),
             elevation: 0,

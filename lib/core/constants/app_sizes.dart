@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_colors.dart';
 
 /// AppSizes defines the strict spacing scale, radius scale, and elevation shadow levels
 /// based on the GoNext Design System guidelines. It also preserves intermediate helper
@@ -64,7 +65,7 @@ class AppSizes {
   static const double s48 = 48.0;
 
   // Custom Elevation & Shadow Levels (Using Emerald Deep #0F5E45 at low opacities)
-  static const List<BoxShadow> shadowLevel1 = [
+  static const List<BoxShadow> _shadowLevel1Light = [
     BoxShadow(
       color: Color(0x0A0F5E45), // ~4% opacity of #0F5E45
       offset: Offset(0, 1),
@@ -79,7 +80,18 @@ class AppSizes {
     ),
   ];
 
-  static const List<BoxShadow> shadowLevel2 = [
+  static const List<BoxShadow> _shadowLevel1Dark = [
+    BoxShadow(
+      color: Color(0x3D000000),
+      offset: Offset(0, 1),
+      blurRadius: 2,
+      spreadRadius: 0,
+    ),
+  ];
+
+  static List<BoxShadow> get shadowLevel1 => AppColors.isDark ? _shadowLevel1Dark : _shadowLevel1Light;
+
+  static const List<BoxShadow> _shadowLevel2Light = [
     BoxShadow(
       color: Color(0x140F5E45), // ~8% opacity of #0F5E45
       offset: Offset(0, 4),
@@ -88,7 +100,18 @@ class AppSizes {
     ),
   ];
 
-  static const List<BoxShadow> shadowLevel3 = [
+  static const List<BoxShadow> _shadowLevel2Dark = [
+    BoxShadow(
+      color: Color(0x52000000),
+      offset: Offset(0, 4),
+      blurRadius: 12,
+      spreadRadius: 0,
+    ),
+  ];
+
+  static List<BoxShadow> get shadowLevel2 => AppColors.isDark ? _shadowLevel2Dark : _shadowLevel2Light;
+
+  static const List<BoxShadow> _shadowLevel3Light = [
     BoxShadow(
       color: Color(0x240F5E45), // ~14% opacity of #0F5E45
       offset: Offset(0, 12),
@@ -97,6 +120,17 @@ class AppSizes {
     ),
   ];
 
+  static const List<BoxShadow> _shadowLevel3Dark = [
+    BoxShadow(
+      color: Color(0x66000000),
+      offset: Offset(0, 12),
+      blurRadius: 32,
+      spreadRadius: 0,
+    ),
+  ];
+
+  static List<BoxShadow> get shadowLevel3 => AppColors.isDark ? _shadowLevel3Dark : _shadowLevel3Light;
+
   // Alias for backward compatibility
-  static const List<BoxShadow> softShadow = shadowLevel1;
+  static List<BoxShadow> get softShadow => shadowLevel1;
 }

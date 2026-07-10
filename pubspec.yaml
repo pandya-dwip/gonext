@@ -38,7 +38,7 @@ dependencies:
   go_router: ^17.3.0
   google_fonts: ^8.1.0
   google_maps_flutter: ^2.17.1
-  geolocator: ^14.0.3
+  geolocator: ^13.0.0
   geocoding: ^5.0.0
   url_launcher: ^6.3.2
   path_provider: ^2.1.6
@@ -49,6 +49,7 @@ dependencies:
   hive_ce: ^2.19.3
   hive_ce_flutter: ^2.3.4
   image_picker: ^1.2.3
+  file_picker: ^8.0.0
 
 dev_dependencies:
   flutter_test:
@@ -74,9 +75,10 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
+  assets:
+    - assets/images/restaurants/
+    - assets/images/clothing/
+    - assets/images/visits/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

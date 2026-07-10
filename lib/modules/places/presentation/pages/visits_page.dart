@@ -147,7 +147,7 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
                 padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
                 child: Row(
                   children: [
-                    const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
+                    Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
                     AppSizes.gapW8,
                     Expanded(
                       child: TextField(
@@ -168,7 +168,7 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
                     ),
                     GestureDetector(
                       onTap: _showSortBottomSheet,
-                      child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),
+                      child: Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),
                     ),
                   ],
                 ),

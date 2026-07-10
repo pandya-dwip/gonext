@@ -49,6 +49,36 @@ class PlacesListNotifier extends AsyncNotifier<List<PlaceModel>> {
       return await _repo.getAllPlaces();
     });
   }
+
+  Future<void> loadDemoData(List<PlaceModel> demoPlaces) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      await _repo.savePlaces(demoPlaces);
+      return await _repo.getAllPlaces();
+    });
+  }
+
+  Future<void> clearDemoData() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final current = await _repo.getAllPlaces();
+      for (final p in current) {
+        if (p.isDemoData) {
+          await _repo.deletePlace(p.id);
+        }
+      }
+      return await _repo.getAllPlaces();
+    });
+  }
+
+  Future<void> restoreData(List<PlaceModel> places) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      await _repo.clearAll();
+      await _repo.savePlaces(places);
+      return await _repo.getAllPlaces();
+    });
+  }
 }
 
 /// Provider managing the list of all stored places.
@@ -61,6 +91,7 @@ class SearchQueryNotifier extends Notifier<String> {
   @override
   String build() => '';
 
+  @override
   set state(String val) => super.state = val;
 }
 final placeSearchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(SearchQueryNotifier.new);
@@ -69,6 +100,7 @@ class PlaceSortOptionNotifier extends Notifier<PlaceSortOption> {
   @override
   PlaceSortOption build() => PlaceSortOption.newest;
 
+  @override
   set state(PlaceSortOption val) => super.state = val;
 }
 final placeSortOptionProvider = NotifierProvider<PlaceSortOptionNotifier, PlaceSortOption>(PlaceSortOptionNotifier.new);
@@ -108,6 +140,7 @@ class RestaurantRatingFilterNotifier extends Notifier<double?> {
   @override
   double? build() => null;
 
+  @override
   set state(double? val) => super.state = val;
 }
 final restaurantRatingFilterProvider = NotifierProvider<RestaurantRatingFilterNotifier, double?>(RestaurantRatingFilterNotifier.new);
@@ -143,6 +176,7 @@ class HomeSearchQueryNotifier extends Notifier<String> {
   @override
   String build() => '';
 
+  @override
   set state(String val) => super.state = val;
 }
 final homeSearchQueryProvider = NotifierProvider<HomeSearchQueryNotifier, String>(HomeSearchQueryNotifier.new);

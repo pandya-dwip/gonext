@@ -219,7 +219,7 @@ class GNCard extends StatelessWidget {
                     AppSizes.gapH12,
                     Row(
                       children: [
-                        const Icon(Icons.location_on_rounded, color: AppColors.textSecondary, size: 14),
+                        Icon(Icons.location_on_rounded, color: AppColors.textSecondary, size: 14),
                         const SizedBox(width: 6),
                         Expanded(
                           child: locationWidget ?? Text(
@@ -240,7 +240,7 @@ class GNCard extends StatelessWidget {
                               ),
                             );
                           },
-                          child: const Icon(
+                          child: Icon(
                             Icons.copy_rounded,
                             color: AppColors.textSecondary,
                             size: 14,
@@ -274,7 +274,7 @@ class GNCard extends StatelessWidget {
           children: [
             // Diagonal subtle Emerald->Teal background
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -520,7 +520,7 @@ class GNCard extends StatelessWidget {
         } else {
           return Container(
             color: AppColors.surfaceFaint,
-            child: const Center(
+            child: Center(
               child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 24),
             ),
           );
@@ -550,7 +550,7 @@ class GNCard extends StatelessWidget {
             if (loadingProgress == null) return child;
             return Container(
               color: AppColors.surfaceFaint,
-              child: const Center(
+              child: Center(
                 child: SizedBox(
                   width: 24,
                   height: 24,

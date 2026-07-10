@@ -3,13 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'dart:io';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/components/gn_card.dart';
-import '../../../../shared/components/gn_chip.dart';
-import '../../../../shared/components/gn_button.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../providers/place_provider.dart';
 import '../../data/models/place_model.dart';
@@ -144,7 +141,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
                 padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
                 child: Row(
                   children: [
-                    const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
+                    Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
                     AppSizes.gapW8,
                     Expanded(
                       child: TextField(
@@ -387,7 +384,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 20),
+                  Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 20),
                   AppSizes.gapW8,
                   Expanded(
                     child: Text(
@@ -429,7 +426,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
                     boxShadow: AppSizes.shadowLevel1,
