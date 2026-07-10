@@ -13,6 +13,8 @@ import '../../../../shared/components/gn_button.dart';
 import '../../../../shared/components/gn_searchable_selector.dart';
 import '../../domain/entities/location_result.dart';
 import 'wishlist_page.dart'; // import MapMockPainter for maps preview
+import '../../../../core/theme/map_theme.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -496,6 +498,8 @@ class _AddRestaurantPageState extends ConsumerState<AddRestaurantPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentColorProvider);
+    ref.watch(themeModeProvider);
     final bool hasMapKey = AppConstants.isMapsApiKeyValid;
 
     return Scaffold(
@@ -842,6 +846,9 @@ class _AddRestaurantPageState extends ConsumerState<AddRestaurantPage> {
                                         zoomControlsEnabled: false,
                                         myLocationButtonEnabled: false,
                                         liteModeEnabled: true,
+                                        onMapCreated: (controller) {
+                                          MapTheme.applyMapStyle(controller, AppColors.isDark);
+                                        },
                                       ),
                                     )
                                   else

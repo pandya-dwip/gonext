@@ -12,6 +12,8 @@ import '../../../../shared/components/gn_button.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../providers/place_provider.dart';
 import 'wishlist_page.dart'; // import MapMockPainter for maps preview
+import '../../../../core/theme/map_theme.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
 
 /// ClothingDetailPage displays detailed properties of boutique retail locations.
 class ClothingDetailPage extends ConsumerWidget {
@@ -182,6 +184,8 @@ class ClothingDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(accentColorProvider);
+    ref.watch(themeModeProvider);
     final placesAsync = ref.watch(placesListProvider);
 
     return placesAsync.when(
@@ -404,6 +408,9 @@ class ClothingDetailPage extends ConsumerWidget {
                                       },
                                       zoomControlsEnabled: false,
                                       myLocationButtonEnabled: false,
+                                      onMapCreated: (controller) {
+                                        MapTheme.applyMapStyle(controller, AppColors.isDark);
+                                      },
                                     ),
                                   )
                                 else ...[

@@ -12,6 +12,7 @@ import '../../../../shared/components/highlighted_text.dart';
 import '../providers/navigation_provider.dart';
 import '../../../places/data/models/place_model.dart';
 import '../../../places/presentation/providers/place_provider.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
 
 /// HomeTabView implements the refined Phase 4.2 dashboard layout backed by Hive data.
 class HomeTabView extends ConsumerStatefulWidget {
@@ -53,6 +54,8 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentColorProvider);
+    ref.watch(themeModeProvider);
     final placesAsync = ref.watch(placesListProvider);
 
     return placesAsync.when(

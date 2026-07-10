@@ -11,6 +11,8 @@ import '../../../../core/constants/app_constants.dart';
 import '../providers/place_provider.dart';
 import '../../data/models/place_model.dart';
 import '../../../../shared/components/gn_empty_state.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
+import '../../../../core/theme/map_theme.dart';
 
 /// WishlistPage displays a motivational count title, toggleable list/map previews,
 /// and list swipe-to-visit animations with premium photo coverage.
@@ -49,6 +51,8 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentColorProvider);
+    ref.watch(themeModeProvider);
     final wishlist = ref.watch(filteredWishlistProvider);
 
     return Scaffold(
@@ -351,6 +355,9 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
           markers: markers,
           myLocationButtonEnabled: false,
           zoomControlsEnabled: false,
+          onMapCreated: (controller) {
+            MapTheme.applyMapStyle(controller, AppColors.isDark);
+          },
         ),
       );
     }
@@ -502,6 +509,6 @@ class MapMockPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 

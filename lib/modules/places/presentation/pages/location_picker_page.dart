@@ -8,6 +8,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/components/gn_button.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../domain/entities/location_result.dart';
+import '../../../../core/theme/map_theme.dart';
 import 'wishlist_page.dart'; // Import MapMockPainter for visual placeholder fallback
 
 /// LocationPickerPage provides the interactive map screen for locating places (Phase 6.1).
@@ -241,7 +242,10 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                     child: hasKey
                         ? GoogleMap(
                             initialCameraPosition: CameraPosition(target: latLng, zoom: 15),
-                            onMapCreated: (controller) => _mapController = controller,
+                            onMapCreated: (controller) {
+                              _mapController = controller;
+                              MapTheme.applyMapStyle(controller, AppColors.isDark);
+                            },
                             myLocationEnabled: true,
                             myLocationButtonEnabled: false, // Customized float button
                             zoomControlsEnabled: true,

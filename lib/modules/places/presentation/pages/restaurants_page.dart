@@ -9,6 +9,7 @@ import '../../../../shared/components/gn_chip.dart';
 import '../../../../shared/components/gn_empty_state.dart';
 import '../../data/models/place_model.dart';
 import '../providers/place_provider.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
 
 /// RestaurantsPage displays saved dining spots with search, chips filters,
 /// and vertical 4:3 standard cards with local/network/asset photography.
@@ -70,15 +71,12 @@ class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
                     label = 'Recently Updated';
                     break;
                 }
-                return RadioListTile<PlaceSortOption>(
-                  title: Text(label),
-                  value: opt,
-                  groupValue: currentSort,
-                  activeColor: AppColors.primary,
-                  onChanged: (val) {
-                    if (val != null) {
-                      ref.read(placeSortOptionProvider.notifier).state = val;
-                    }
+                final isSelected = currentSort == opt;
+                return ListTile(
+                  title: Text(label, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                  trailing: isSelected ? Icon(Icons.check_rounded, color: AppColors.primary) : null,
+                  onTap: () {
+                    ref.read(placeSortOptionProvider.notifier).state = opt;
                     Navigator.pop(context);
                   },
                 );
@@ -92,6 +90,8 @@ class _RestaurantsPageState extends ConsumerState<RestaurantsPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentColorProvider);
+    ref.watch(themeModeProvider);
     final restaurants = ref.watch(filteredRestaurantsProvider);
     final allPlaces = ref.watch(placesListProvider).value ?? [];
     final rawRestaurantsEmpty = allPlaces.where((p) => p.type == 'restaurant').isEmpty;

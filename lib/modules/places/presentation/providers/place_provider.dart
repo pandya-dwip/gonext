@@ -18,12 +18,12 @@ final placeRepositoryProvider = Provider<PlaceRepository>((ref) {
 
 /// Notifier that manages the raw list of saved places inside the Hive repository.
 class PlacesListNotifier extends AsyncNotifier<List<PlaceModel>> {
-  late final PlaceRepository _repo;
+  PlaceRepository get _repo => ref.read(placeRepositoryProvider);
 
   @override
   Future<List<PlaceModel>> build() async {
-    _repo = ref.watch(placeRepositoryProvider);
-    return await _repo.getAllPlaces();
+    final repo = ref.watch(placeRepositoryProvider);
+    return await repo.getAllPlaces();
   }
 
   Future<void> addPlace(PlaceModel place) async {

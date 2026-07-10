@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/components/gn_logo.dart';
 
 /// SplashPage sets the premium, calm tone of GoNext on cold starts.
 /// It features scale and fade animations and redirects to the dashboard.
@@ -51,7 +52,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
 
     _controller.forward();
 
-    // Navigate to dashboard after 1.5 seconds (1500ms)
+    // Navigate to dashboard after 1.8 seconds (1800ms)
     Future.delayed(const Duration(milliseconds: 1800), () {
       if (mounted) {
         context.go('/dashboard');
@@ -68,16 +69,23 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background soft gradient
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: AppColors.heroGradient,
+          // Background soft radial centering glow
+          Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              height: MediaQuery.of(context).size.width * 0.8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.primary.withValues(alpha: AppColors.isDark ? 0.08 : 0.05),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
@@ -89,24 +97,21 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Wordmark + Leaf Symbol
+                    // Wordmark + Logo Symbol
                     Transform.scale(
                       scale: _scaleAnimation.value,
                       child: Opacity(
                         opacity: _opacityAnimation.value,
                         child: Column(
                           children: [
-                            Icon(
-                              Icons.eco_rounded, // Premium leaf/pin symbol
-                              size: 40,
-                              color: AppColors.primary,
-                            ),
-                            AppSizes.gapH12,
+                            const GNLogo(size: 80),
+                            AppSizes.gapH24,
                             Text(
                               'GoNext',
                               style: AppTypography.display.copyWith(
                                 color: AppColors.primary,
                                 letterSpacing: -0.5,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],

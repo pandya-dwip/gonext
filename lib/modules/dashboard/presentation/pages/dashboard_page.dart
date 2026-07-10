@@ -9,6 +9,7 @@ import '../../../places/presentation/pages/restaurants_page.dart';
 import '../../../places/presentation/pages/clothing_page.dart';
 import '../../../places/presentation/pages/visits_page.dart';
 import '../../../places/presentation/pages/wishlist_page.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
 
 /// DashboardPage manages the curved notched navigation bar shell and category modal launcher.
 class DashboardPage extends ConsumerStatefulWidget {
@@ -22,6 +23,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     final selectedTab = ref.watch(dashboardTabProvider);
+    // Listen to settings updates for immediate visual refresh of shell elements
+    ref.watch(accentColorProvider);
+    ref.watch(themeModeProvider);
 
     return Scaffold(
       extendBody: true, // Lets screen contents scroll behind the curved bottom bar
@@ -58,19 +62,18 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
-
   Widget _buildBody(DashboardTab tab) {
     switch (tab) {
       case DashboardTab.restaurants:
-        return const RestaurantsPage();
+        return RestaurantsPage();
       case DashboardTab.clothing:
-        return const ClothingPage();
+        return ClothingPage();
       case DashboardTab.home:
-        return const HomeTabView();
+        return HomeTabView();
       case DashboardTab.visits:
-        return const VisitsPage();
+        return VisitsPage();
       case DashboardTab.wishlist:
-        return const WishlistPage();
+        return WishlistPage();
     }
   }
 }

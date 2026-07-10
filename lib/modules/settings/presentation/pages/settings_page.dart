@@ -14,6 +14,7 @@ import '../../../places/data/models/place_model.dart';
 import '../../../places/presentation/providers/place_provider.dart';
 import '../../../../core/constants/demo_data.dart';
 import '../providers/settings_provider.dart';
+import '../../../../shared/components/gn_logo.dart';
 
 /// SettingsPage provides backup/restore features, dark mode toggles,
 /// theme gallery page navigation, and demo data loaders.
@@ -90,14 +91,26 @@ class SettingsPage extends ConsumerWidget {
       }
       
       final filePath = '$directoryPath/gonext_backup_${DateTime.now().millisecondsSinceEpoch}.json';
-      final file = File(filePath);
-      await file.writeAsString(jsonString);
-      
-      _showSuccessDialog(
-        context,
-        'Backup Successful',
-        'Your GoNext backup file has been saved to:\n\n$filePath',
-      );
+      try {
+        final file = File(filePath);
+        await file.writeAsString(jsonString);
+        _showSuccessDialog(
+          context,
+          'Backup Successful',
+          'Your GoNext backup file has been saved to:\n\n$filePath',
+        );
+      } catch (_) {
+        // Fallback to safe application documents directory if selected folder picker lacks direct write permissions
+        final documentsDir = await getApplicationDocumentsDirectory();
+        final fallbackPath = '${documentsDir.path}/gonext_backup_${DateTime.now().millisecondsSinceEpoch}.json';
+        final file = File(fallbackPath);
+        await file.writeAsString(jsonString);
+        _showSuccessDialog(
+          context,
+          'Backup Successful',
+          'Saved to application directory due to folder write restrictions:\n\n$fallbackPath',
+        );
+      }
     } catch (e) {
       _showErrorDialog(context, 'Backup Failed', 'An error occurred during data backup: $e');
     }
@@ -163,7 +176,6 @@ class SettingsPage extends ConsumerWidget {
       // Restore settings if present
       if (backupMap.containsKey('settings')) {
         final settings = backupMap['settings'] as Map<String, dynamic>;
-        final settingsBox = Hive.box('settings_box');
         
         if (settings.containsKey('themeMode')) {
           final modeStr = settings['themeMode'] as String;
@@ -407,7 +419,6 @@ class SettingsPage extends ConsumerWidget {
       case ThemeMode.dark:
         return 'Dark';
       case ThemeMode.system:
-      default:
         return 'System';
     }
   }
@@ -511,10 +522,9 @@ class SettingsPage extends ConsumerWidget {
           Center(
             child: Column(
               children: [
-                Icon(
-                  Icons.eco_rounded,
-                  color: AppColors.textSecondary.withValues(alpha: 0.5),
+                GNLogo(
                   size: 40,
+                  color: AppColors.textSecondary.withValues(alpha: 0.5),
                 ),
                 AppSizes.gapH8,
                 Text(

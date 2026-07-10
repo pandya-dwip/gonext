@@ -9,6 +9,7 @@ import '../../../../shared/components/gn_chip.dart';
 import '../../../../shared/components/gn_empty_state.dart';
 import '../../data/models/place_model.dart';
 import '../providers/place_provider.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
 
 /// ClothingPage displays boutique streetwear and vintage collections
 /// featuring a vertical card ratio (4:5 crop) with local/network/asset lifestyle images.
@@ -48,7 +49,7 @@ class _ClothingPageState extends ConsumerState<ClothingPage> {
             children: [
               const Padding(
                 padding: EdgeInsets.all(16.0),
-                child: Text('Sort Boutique Stores By', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text('Sort Clothing Stores By', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
               ...PlaceSortOption.values.map((opt) {
                 String label = '';
@@ -69,15 +70,12 @@ class _ClothingPageState extends ConsumerState<ClothingPage> {
                     label = 'Recently Updated';
                     break;
                 }
-                return RadioListTile<PlaceSortOption>(
-                  title: Text(label),
-                  value: opt,
-                  groupValue: currentSort,
-                  activeColor: AppColors.primary,
-                  onChanged: (val) {
-                    if (val != null) {
-                      ref.read(placeSortOptionProvider.notifier).state = val;
-                    }
+                final isSelected = currentSort == opt;
+                return ListTile(
+                  title: Text(label, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                  trailing: isSelected ? Icon(Icons.check_rounded, color: AppColors.primary) : null,
+                  onTap: () {
+                    ref.read(placeSortOptionProvider.notifier).state = opt;
                     Navigator.pop(context);
                   },
                 );
@@ -91,6 +89,8 @@ class _ClothingPageState extends ConsumerState<ClothingPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentColorProvider);
+    ref.watch(themeModeProvider);
     final boutiques = ref.watch(filteredClothingProvider);
     final allPlaces = ref.watch(placesListProvider).value ?? [];
     final rawClothingEmpty = allPlaces.where((p) => p.type == 'clothing').isEmpty;
